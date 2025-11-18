@@ -78,6 +78,7 @@ public class MainActivity extends Activity
     Button repetInstrumentalButton;
     Button pitchUpButton;
     Button cropButton;
+    Button mixButton;
     String thing = "something";
     private MediaPlayer mediaPlayer;
     public static native boolean createSpeedAudioPlayer(String filePath, float speed);
@@ -125,6 +126,7 @@ public class MainActivity extends Activity
         repetInstrumentalButton = (Button) findViewById(R.id.repet_instrumental_button);
         pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
         cropButton = (Button) findViewById(R.id.crop_button);
+        mixButton = (Button) findViewById(R.id.mix_button);
 
         pitchUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -137,6 +139,13 @@ public class MainActivity extends Activity
             @Override
             public void onClick(View v) {
                 cropClick(v);
+            }
+        });
+
+        mixButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mixClick(v);
             }
         });
 
@@ -992,6 +1001,75 @@ public class MainActivity extends Activity
 
         } catch (Exception e) {
             statusView.setText("Resample/play error: " + e.getMessage());
+        }
+    }
+
+    public void mixClick(View view){
+        if (instrumentalSamples == null) {
+            statusView.setText("Please run REPET first!");
+            return;
+        }
+
+        // Stop any currently playing audio
+        stopCurrentAudio();
+
+        try {
+
+            // Convert short array to byte array for AudioTrack
+//            ByteBuffer insBuffer = ByteBuffer.allocate(instrumentalSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+//            for (short s : instrumentalSamples) {
+//                insBuffer.putShort(s);
+//            }
+//
+//            // Convert short array to byte array for AudioTrack
+//            ByteBuffer vocalBuffer = ByteBuffer.allocate(vocalSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+////            for (short s : vocalSamples) {
+//            for (int i = 0; i < vocalSamples.length; i++) {
+//                vocalBuffer.putShort(vocalSamples[vocalSamples.length - i - 1]);
+//            }
+
+//         mixmixmixmixmixmixmixmixmixmixmixmixmixmixmixmixmixmixi
+            // Ensure both arrays are the same length - use the shorter one as limit
+            int minLength = Math.min(instrumentalSamples.length, vocalSamples.length);
+            short[] mixedSamples = new short[minLength];
+
+            // Mix the samples
+            for (int i = 0; i < minLength; i++) {
+                // Convert to int to prevent overflow during addition
+                int mixed = instrumentalSamples[i] + vocalSamples[minLength - i - 1];
+
+                // Prevent clipping - clamp to short range
+                if (mixed > Short.MAX_VALUE) {
+                    mixed = Short.MAX_VALUE;
+                } else if (mixed < Short.MIN_VALUE) {
+                    mixed = Short.MIN_VALUE;
+                }
+
+                mixedSamples[i] = (short) mixed;
+            }
+
+            // Convert mixed short array to byte array for AudioTrack
+            ByteBuffer outBuffer = ByteBuffer.allocate(mixedSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+            for (short s : mixedSamples) {
+                outBuffer.putShort(s);
+            }
+
+
+            // Play instrumental (background) PCM data using AudioTrack with correct sample rate
+            currentAudioTrack = new AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    repetSampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    instrumentalSamples.length * 2,
+                    AudioTrack.MODE_STATIC
+            );
+
+            currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+            currentAudioTrack.play();
+            statusView.setText("Playing instrumental track at " + repetSampleRate + " Hz...");
+        } catch (Exception e) {
+            statusView.setText("Instrumental playback error: " + e.getMessage());
         }
     }
 //    -------------------------------------------------------------

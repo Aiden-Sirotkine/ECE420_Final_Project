@@ -45,6 +45,18 @@
         android:text="Crop" />
 
     <Button
+        android:id="@+id/mix_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/crop_button"
+        android:layout_alignParentEnd="false"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="24dp"
+        android:onClick="REPETVocalClick"
+        android:text="Mix" />
+
+    <Button
         android:id="@+id/repet"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
