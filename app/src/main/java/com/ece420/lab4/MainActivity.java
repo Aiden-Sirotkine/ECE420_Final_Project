@@ -124,6 +124,14 @@ public class MainActivity extends Activity
         repetInstrumentalButton = (Button) findViewById(R.id.repet_instrumental_button);
         pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
 
+        pitchUpButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                WSOLAClick(v);
+            }
+        });
+
+
 
 //        ---------------------------------------------
         
@@ -770,6 +778,133 @@ public class MainActivity extends Activity
     public void pitchUpClick(View view) {
         // TODO: Implement pitch up functionality
         statusView.setText("Pitch up clicked");
+    }
+
+
+    public void WSOLAClick(View view) {
+        try {
+            // 1. Load WAV file from raw resources
+            InputStream inputStream = getResources().openRawResource(R.raw.audio_file);
+            byte[] wavData = new byte[inputStream.available()];
+            inputStream.read(wavData);
+            inputStream.close();
+
+            // 2. Parse WAV header and extract PCM data (assume 44-byte header)
+            int headerSize = 44;
+            if (wavData.length >= 28) { // Ensure header is large enough
+                // Sample rate is at bytes 24-27 (little-endian)
+                int sampleRate = ((wavData[27] & 0xFF) << 24) |
+                        ((wavData[26] & 0xFF) << 16) |
+                        ((wavData[25] & 0xFF) << 8) |
+                        ((wavData[24] & 0xFF));
+            }
+
+            int pcmDataSize = wavData.length - headerSize;
+            byte[] pcmData = new byte[pcmDataSize];
+            System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
+
+            // 3. Convert to short array
+            ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
+            int numSamples = pcmDataSize / 2;
+            short[] originalSamples = new short[numSamples];
+            for (int i = 0; i < numSamples; i++) {
+                originalSamples[i] = pcmBuffer.getShort();
+            }
+
+            // 4. WSOLA pitch shift up by 100% (one octave)
+            double pitch_shift = 1.5;
+            double rate = pitch_shift*2;
+
+            int frameSize = 1024;
+            int analysisHop = frameSize / 2; // input hop size
+            int synthesisHop = (int) (analysisHop * pitch_shift); // output hop size
+
+            int outputLength = (int) ((numSamples - frameSize) / analysisHop) * synthesisHop + frameSize;
+            if (outputLength <= 0) outputLength = frameSize;
+            short[] outputSamples = new short[outputLength];
+
+            int outPos = 0;
+            for (int inPos = 0; inPos + frameSize < numSamples && outPos + frameSize < outputLength; inPos += analysisHop) {
+                // Find best overlap position using cross-correlation
+                int bestOffset = 0;
+                double maxCorr = Double.NEGATIVE_INFINITY;
+                int searchRange = analysisHop / 2;
+                for (int offset = -searchRange; offset <= searchRange; offset++) {
+                    int refStart = inPos;
+                    int cmpStart = inPos + analysisHop + offset;
+                    if (cmpStart < 0 || cmpStart + frameSize > numSamples) continue;
+                    double corr = 0;
+                    for (int j = 0; j < frameSize; j++) {
+                        corr += originalSamples[refStart + j] * originalSamples[cmpStart + j];
+                    }
+                    if (corr > maxCorr) {
+                        maxCorr = corr;
+                        bestOffset = offset;
+                    }
+                }
+                int bestStart = inPos + analysisHop + bestOffset;
+                if (bestStart < 0 || bestStart + frameSize > numSamples) continue;
+
+                // Overlap-add with bounds check and clamping
+                for (int j = 0; j < frameSize; j++) {
+                    int outIdx = outPos + j;
+                    if (outIdx < outputSamples.length && bestStart + j < originalSamples.length) {
+                        int sum = outputSamples[outIdx] + originalSamples[bestStart + j];
+                        if (sum > Short.MAX_VALUE) sum = Short.MAX_VALUE;
+                        if (sum < Short.MIN_VALUE) sum = Short.MIN_VALUE;
+                        outputSamples[outIdx] = (short) sum;
+                    }
+                }
+                outPos += synthesisHop;
+            }
+
+//            4.5 add resampling to get the speed back to the original
+            // Simple 2x speed: take every other sample
+
+            short[] resampledSamples = new short[(int) (numSamples / rate)];
+            for (int i = 0; i < resampledSamples.length; i+=1) {
+                resampledSamples[i] = outputSamples[(int) (i* rate)];
+            }
+
+            // 4. Play resampled PCM data using AudioTrack
+            int sampleRate = 44100; // or parse from WAV header
+            AudioTrack audioTrack = new AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    resampledSamples.length * 2,
+                    AudioTrack.MODE_STATIC
+            );
+
+            ByteBuffer outBuffer = ByteBuffer.allocate(resampledSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+            for (short s : resampledSamples) outBuffer.putShort(s);
+            audioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+            audioTrack.play();
+
+
+
+//            // 5. Play output using AudioTrack
+//            int sampleRate = 44100;
+//            AudioTrack audioTrack = new AudioTrack(
+//                    AudioManager.STREAM_MUSIC,
+//                    sampleRate,
+//                    AudioFormat.CHANNEL_OUT_MONO,
+//                    AudioFormat.ENCODING_PCM_16BIT,
+//                    outputSamples.length * 2,
+//                    AudioTrack.MODE_STATIC
+//            );
+//            ByteBuffer outBuffer = ByteBuffer.allocate(outputSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+//            for (short s : outputSamples) outBuffer.putShort(s);
+//            audioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+//            audioTrack.play();
+//
+        } catch (Exception e) {
+            statusView.setText(
+            "Exception: " + e.getClass().getName() + "\n" +
+            "Message: " + e.getMessage()
+            );
+        }
     }
 //    -------------------------------------------------------------
 

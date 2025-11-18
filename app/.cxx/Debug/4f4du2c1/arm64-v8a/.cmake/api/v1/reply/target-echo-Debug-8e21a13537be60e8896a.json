@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a/libecho.so"
+			"path" : "/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a/libecho.so"
 		}
 	],
 	"backtrace" : 1,
@@ -64,7 +64,7 @@
 			],
 			"sysroot" : 
 			{
-				"path" : "/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/sysroot"
+				"path" : "/home/aidensiro/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
 			}
 		},
 		{
@@ -87,7 +87,7 @@
 			],
 			"sysroot" : 
 			{
-				"path" : "/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/sysroot"
+				"path" : "/home/aidensiro/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
 			}
 		}
 	],
@@ -128,7 +128,7 @@
 		"language" : "CXX",
 		"sysroot" : 
 		{
-			"path" : "/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/sysroot"
+			"path" : "/home/aidensiro/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
 		}
 	},
 	"name" : "echo",

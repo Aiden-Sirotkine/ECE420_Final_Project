@@ -1,2 +1,2 @@
-/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/src/main/cpp/CMakeLists.txt
-/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/src/main/cpp/ndk-stl-config.cmake
+/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/src/main/cpp/CMakeLists.txt
+/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/src/main/cpp/ndk-stl-config.cmake
