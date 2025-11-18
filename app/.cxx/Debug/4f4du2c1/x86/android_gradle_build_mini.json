@@ -1,0 +1,28 @@
+{
+  "buildFiles": [
+    "/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/src/main/cpp/CMakeLists.txt",
+    "/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/src/main/cpp/ndk-stl-config.cmake"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/home/aidensiro/Android/Sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/.cxx/Debug/4f4du2c1/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/home/aidensiro/Android/Sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/.cxx/Debug/4f4du2c1/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "echo::@6890427a1f51a3e7e1df": {
+      "artifactName": "echo",
+      "abi": "x86",
+      "output": "/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/build/intermediates/cxx/Debug/4f4du2c1/obj/x86/libecho.so",
+      "runtimeFiles": []
+    }
+  }
+}

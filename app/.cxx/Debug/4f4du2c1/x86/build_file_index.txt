@@ -1,0 +1,2 @@
+/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/src/main/cpp/CMakeLists.txt
+/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/src/main/cpp/ndk-stl-config.cmake
