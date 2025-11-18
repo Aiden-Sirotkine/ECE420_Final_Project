@@ -30,7 +30,18 @@
         android:text="resample"
         android:onClick="resampleClick"
         android:layout_centerVertical="true"
+        android:layout_margin="0dp"
         android:layout_centerHorizontal="false" />
+
+    <Button
+        android:id="@+id/wsola_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="WSOLA"
+        android:onClick="WSOLAClick"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="false"
+        android:layout_margin="160dp"/>
 
     <Button
         android:layout_width="wrap_content"

@@ -71,8 +71,6 @@ void ece420ProcessFrame(sample_buf *dataBuf) {
 //   Now find the autocorrelation using a Fourier Transform
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
     // Initialize KISS FFT
     int nfft = FRAME_SIZE;
     kiss_fft_cfg cfg = kiss_fft_alloc(nfft, 0, 0, 0);
@@ -88,8 +86,6 @@ void ece420ProcessFrame(sample_buf *dataBuf) {
     }
 
 //   Now I perform the actual FFT, which I think involves just using a library.
-
-
     // Perform the FFT
     kiss_fft(cfg, cx_in, cx_out);
 
