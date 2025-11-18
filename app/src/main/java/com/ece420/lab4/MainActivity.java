@@ -77,6 +77,7 @@ public class MainActivity extends Activity
     Button repetVocalButton;
     Button repetInstrumentalButton;
     Button pitchUpButton;
+    Button cropButton;
     String thing = "something";
     private MediaPlayer mediaPlayer;
     public static native boolean createSpeedAudioPlayer(String filePath, float speed);
@@ -123,11 +124,19 @@ public class MainActivity extends Activity
         repetVocalButton = (Button) findViewById(R.id.repet_vocal);
         repetInstrumentalButton = (Button) findViewById(R.id.repet_instrumental_button);
         pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
+        cropButton = (Button) findViewById(R.id.crop_button);
 
         pitchUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 WSOLAClick(v);
+            }
+        });
+
+        cropButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cropClick(v);
             }
         });
 
@@ -292,7 +301,17 @@ public class MainActivity extends Activity
             inputStream.close();
 
             // 2. Parse WAV header and extract PCM data (assume 44-byte header)
+            int sampleRate = 44100;
             int headerSize = 44;
+            if (wavData.length >= 28) { // Ensure header is large enough
+                // Sample rate is at bytes 24-27 (little-endian)
+                sampleRate = ((wavData[27] & 0xFF) << 24) |
+                        ((wavData[26] & 0xFF) << 16) |
+                        ((wavData[25] & 0xFF) << 8) |
+                        ((wavData[24] & 0xFF));
+            }
+
+
             int pcmDataSize = wavData.length - headerSize;
             byte[] pcmData = new byte[pcmDataSize];
             System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
@@ -300,20 +319,21 @@ public class MainActivity extends Activity
             // 3. Resample PCM data (e.g., 2x speed: skip every other sample)
             // Assuming 16-bit PCM, mono
             ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
-            int numSamples = pcmDataSize / 2;
+            int numSamples = pcmDataSize / 2; // times 2
             short[] originalSamples = new short[numSamples];
             for (int i = 0; i < numSamples; i++) {
                 originalSamples[i] = pcmBuffer.getShort();
             }
             // Simple 2x speed: take every other sample
-            int rate = 3;
-            short[] resampledSamples = new short[numSamples / rate];
+            double rate = 1.2;
+            rate *= 2;
+            short[] resampledSamples = new short[(int) (numSamples / rate)];
             for (int i = 0; i < resampledSamples.length; i+=1) {
-                resampledSamples[i] = originalSamples[i* rate];
+                resampledSamples[i] = originalSamples[(int) (i* rate)];
             }
 
             // 4. Play resampled PCM data using AudioTrack
-            int sampleRate = 44100; // or parse from WAV header
+            sampleRate = (int) (sampleRate); // or parse from WAV header
             AudioTrack audioTrack = new AudioTrack(
                     AudioManager.STREAM_MUSIC,
                     sampleRate,
@@ -904,6 +924,74 @@ public class MainActivity extends Activity
             "Exception: " + e.getClass().getName() + "\n" +
             "Message: " + e.getMessage()
             );
+        }
+    }
+
+    public void cropClick(View view) {
+        try {
+            // 1. Load WAV file from raw resources
+            InputStream inputStream = getResources().openRawResource(R.raw.audio_file);
+            byte[] wavData = new byte[inputStream.available()];
+            inputStream.read(wavData);
+            inputStream.close();
+
+            // 2. Parse WAV header and extract PCM data (assume 44-byte header)
+            int headerSize = 44;
+            int sampleRate = 44100;
+            if (wavData.length >= 28) { // Ensure header is large enough
+                // Sample rate is at bytes 24-27 (little-endian)
+                sampleRate = ((wavData[27] & 0xFF) << 24) |
+                        ((wavData[26] & 0xFF) << 16) |
+                        ((wavData[25] & 0xFF) << 8) |
+                        ((wavData[24] & 0xFF));
+            }
+
+
+            int pcmDataSize = wavData.length - headerSize;
+            byte[] pcmData = new byte[pcmDataSize];
+            System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
+
+            // 3. Resample PCM data (e.g., 2x speed: skip every other sample)
+            // Assuming 16-bit PCM, mono
+            ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
+            int numSamples = pcmDataSize / 2;
+            short[] originalSamples = new short[numSamples];
+            for (int i = 0; i < numSamples; i++) {
+                originalSamples[i] = pcmBuffer.getShort();
+            }
+            // Simple 2x speed: take every other sample
+//            int rate = 3;
+//            short[] resampledSamples = new short[numSamples / rate];
+//            for (int i = 0; i < resampledSamples.length; i+=1) {
+//                resampledSamples[i] = originalSamples[i* rate];
+//            }
+
+//            2. crop some random amount of stuff
+            double crop_percent = 0.6;
+            short[] resampledSamples = new short[(int) (numSamples * crop_percent)];
+            for (int i = 0; i < resampledSamples.length; i+=1) {
+                resampledSamples[i] = originalSamples[(int) (numSamples * (1-crop_percent)) + i];
+            }
+//            short[] resampledSamples = originalSamples;
+
+            // 4. Play resampled PCM data using AudioTrack
+            sampleRate *= 2; // or parse from WAV header
+            AudioTrack audioTrack = new AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    resampledSamples.length * 2, // resampleSampled.length * 2
+                    AudioTrack.MODE_STATIC
+            );
+
+            ByteBuffer outBuffer = ByteBuffer.allocate(resampledSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+            for (short s : resampledSamples) outBuffer.putShort(s);
+            audioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+            audioTrack.play();
+
+        } catch (Exception e) {
+            statusView.setText("Resample/play error: " + e.getMessage());
         }
     }
 //    -------------------------------------------------------------
