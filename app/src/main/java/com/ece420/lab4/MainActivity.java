@@ -48,6 +48,12 @@ import android.os.Bundle;
 import android.widget.Button;
 
 
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import android.media.AudioTrack;
+
+
 public class MainActivity extends Activity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
@@ -67,6 +73,10 @@ public class MainActivity extends Activity
 //    -------------------------------------------------------
     Button somethingButton;
     Button resampleButton;
+    Button repetButton;
+    Button repetVocalButton;
+    Button repetInstrumentalButton;
+    Button pitchUpButton;
     String thing = "something";
     private MediaPlayer mediaPlayer;
     public static native boolean createSpeedAudioPlayer(String filePath, float speed);
@@ -74,6 +84,12 @@ public class MainActivity extends Activity
     public static native void stopSpeedAudio();
     public static native void deleteSpeedAudioPlayer();
     private boolean isSpeedPlaying = false;
+
+    // REPET variables to store separated audio
+    private short[] vocalSamples = null;
+    private short[] instrumentalSamples = null;
+    private int repetSampleRate = 44100; // Store the sample rate for playback
+    private AudioTrack currentAudioTrack = null; // Track currently playing audio
 
 //    --------------------------------------------
 
@@ -103,6 +119,11 @@ public class MainActivity extends Activity
             }
         });
 
+        repetButton = (Button) findViewById(R.id.repet);
+        repetVocalButton = (Button) findViewById(R.id.repet_vocal);
+        repetInstrumentalButton = (Button) findViewById(R.id.repet_instrumental_button);
+        pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
+
 
 //        ---------------------------------------------
         
@@ -120,6 +141,9 @@ public class MainActivity extends Activity
     }
     @Override
     protected void onDestroy() {
+        // Clean up REPET audio
+        stopCurrentAudio();
+
         // Clean up speed audio player
         if (isSpeedPlaying) {
             stopSpeedAudio();
@@ -252,24 +276,500 @@ public class MainActivity extends Activity
 
 
     public void onSpeedUpClick(View view) {
-        if (!isSpeedPlaying) {
-            // Get the path to the raw resource
-            String packageName = getPackageName();
-            int resId = getResources().getIdentifier("audio_file", "raw", packageName);
+        try {
+            // 1. Load WAV file from raw resources
+            InputStream inputStream = getResources().openRawResource(R.raw.audio_file);
+            byte[] wavData = new byte[inputStream.available()];
+            inputStream.read(wavData);
+            inputStream.close();
 
-            if (createSpeedAudioPlayer("android.resource://" + packageName + "/" + resId, 1.5f)) {
-                playSpeedAudio();
-                isSpeedPlaying = true;
-                resampleButton.setText("Stop Speed Play");
-            } else {
-                statusView.setText("Failed to create speed audio player");
+            // 2. Parse WAV header and extract PCM data (assume 44-byte header)
+            int headerSize = 44;
+            int pcmDataSize = wavData.length - headerSize;
+            byte[] pcmData = new byte[pcmDataSize];
+            System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
+
+            // 3. Resample PCM data (e.g., 2x speed: skip every other sample)
+            // Assuming 16-bit PCM, mono
+            ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
+            int numSamples = pcmDataSize / 2;
+            short[] originalSamples = new short[numSamples];
+            for (int i = 0; i < numSamples; i++) {
+                originalSamples[i] = pcmBuffer.getShort();
             }
-        } else {
-            stopSpeedAudio();
-            deleteSpeedAudioPlayer();
-            isSpeedPlaying = false;
-            resampleButton.setText("Play 1.5x Speed");
+            // Simple 2x speed: take every other sample
+            int rate = 3;
+            short[] resampledSamples = new short[numSamples / rate];
+            for (int i = 0; i < resampledSamples.length; i+=1) {
+                resampledSamples[i] = originalSamples[i* rate];
+            }
+
+            // 4. Play resampled PCM data using AudioTrack
+            int sampleRate = 44100; // or parse from WAV header
+            AudioTrack audioTrack = new AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    sampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    resampledSamples.length * 2,
+                    AudioTrack.MODE_STATIC
+            );
+
+            ByteBuffer outBuffer = ByteBuffer.allocate(resampledSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+            for (short s : resampledSamples) outBuffer.putShort(s);
+            audioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+            audioTrack.play();
+
+        } catch (Exception e) {
+            statusView.setText("Resample/play error: " + e.getMessage());
         }
+    }
+
+    public void REPETClick(View view) {
+        statusView.setText("Processing REPET...");
+
+        // Run REPET processing in background thread to avoid ANR
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Load WAV file from raw resources
+                    InputStream inputStream = getResources().openRawResource(R.raw.audio_file);
+                    byte[] wavData = new byte[inputStream.available()];
+                    inputStream.read(wavData);
+                    inputStream.close();
+
+                    // Parse WAV header properly to get sample rate
+                    ByteBuffer headerBuffer = ByteBuffer.wrap(wavData).order(ByteOrder.LITTLE_ENDIAN);
+
+                    // Skip RIFF header (4 bytes)
+                    headerBuffer.position(24); // Jump to sample rate position
+                    final int actualSampleRate = headerBuffer.getInt();
+
+                    // Parse WAV header and extract PCM data (assume 44-byte header)
+                    int headerSize = 44;
+                    int pcmDataSize = wavData.length - headerSize;
+                    byte[] pcmData = new byte[pcmDataSize];
+                    System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
+
+                    // Convert PCM bytes to short samples (16-bit PCM, mono)
+                    ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
+                    int numSamples = pcmDataSize / 2;
+                    short[] samples = new short[numSamples];
+                    for (int i = 0; i < numSamples; i++) {
+                        samples[i] = pcmBuffer.getShort();
+                    }
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Sample rate: " + actualSampleRate + " Hz");
+                        }
+                    });
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Computing STFT with Kiss FFT...");
+                        }
+                    });
+
+                    // REPET Algorithm Parameters
+                    int windowSize = 2048;  // FFT window size
+                    int hopSize = windowSize / 4;  // 75% overlap (25% hop)
+                    int numFrames = (numSamples - windowSize) / hopSize + 1;
+                    int numBins = windowSize / 2 + 1;  // FFT bins
+
+                    // Compute STFT (magnitude and phase)
+                    float[][] magnitude = new float[numFrames][numBins];
+                    float[][] phase = new float[numFrames][numBins];
+
+                    for (int frame = 0; frame < numFrames; frame++) {
+                        int startIdx = frame * hopSize;
+
+                        // Apply Hanning window
+                        float[] windowedSignal = new float[windowSize];
+                        for (int i = 0; i < windowSize; i++) {
+                            float window = (float) (0.5 * (1 - Math.cos(2 * Math.PI * i / (windowSize - 1))));
+                            windowedSignal[i] = samples[startIdx + i] * window;
+                        }
+
+                        // Compute FFT using Kiss FFT
+                        float[] mag = new float[numBins];
+                        float[] ph = new float[numBins];
+                        computeFFT(windowedSignal, mag, ph, windowSize);
+
+                        magnitude[frame] = mag;
+                        phase[frame] = ph;
+
+                        // Progress update every 100 frames
+                        if (frame % 100 == 0) {
+                            final int progress = (frame * 100) / numFrames;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    statusView.setText("STFT: " + progress + "%");
+                                }
+                            });
+                        }
+                    }
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Detecting period from beat spectrogram...");
+                        }
+                    });
+
+                    // Compute beat spectrogram (sum of magnitude across frequencies for each frame)
+                    float[] beatSpectrum = new float[numFrames];
+                    for (int frame = 0; frame < numFrames; frame++) {
+                        float sum = 0;
+                        for (int k = 0; k < numBins; k++) {
+                            sum += magnitude[frame][k];
+                        }
+                        beatSpectrum[frame] = sum;
+                    }
+
+                    // Normalize beat spectrum
+                    float maxBeat = 0;
+                    for (int frame = 0; frame < numFrames; frame++) {
+                        if (beatSpectrum[frame] > maxBeat) {
+                            maxBeat = beatSpectrum[frame];
+                        }
+                    }
+                    if (maxBeat > 0) {
+                        for (int frame = 0; frame < numFrames; frame++) {
+                            beatSpectrum[frame] /= maxBeat;
+                        }
+                    }
+
+                    // Compute autocorrelation of beat spectrum to find period
+                    int minPeriodFrames = (int) ((1.0 * actualSampleRate) / hopSize);  // 1 second min
+                    int maxPeriodFrames = (int) ((10.0 * actualSampleRate) / hopSize); // 10 seconds max
+                    maxPeriodFrames = Math.min(maxPeriodFrames, numFrames / 2);
+                    minPeriodFrames = Math.max(minPeriodFrames, 1);
+
+                    float[] autocorr = new float[maxPeriodFrames + 1];
+                    for (int lag = minPeriodFrames; lag <= maxPeriodFrames; lag++) {
+                        float sum = 0;
+                        int count = 0;
+                        for (int i = 0; i < numFrames - lag; i++) {
+                            sum += beatSpectrum[i] * beatSpectrum[i + lag];
+                            count++;
+                        }
+                        autocorr[lag] = count > 0 ? sum / count : 0;
+                    }
+
+                    // Find peak in autocorrelation (highest peak is the period)
+                    int periodInFrames = minPeriodFrames;
+                    float maxAutocorr = autocorr[minPeriodFrames];
+                    for (int lag = minPeriodFrames; lag <= maxPeriodFrames; lag++) {
+                        if (autocorr[lag] > maxAutocorr) {
+                            maxAutocorr = autocorr[lag];
+                            periodInFrames = lag;
+                        }
+                    }
+
+                    final int detectedPeriodFrames = periodInFrames;
+                    final float detectedPeriodSeconds = (float) (periodInFrames * hopSize) / actualSampleRate;
+                    final int numReps = numFrames / periodInFrames;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Period: " + String.format("%.2f", detectedPeriodSeconds) + "s, " + numReps + " reps");
+                        }
+                    });
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Building repeating model...");
+                        }
+                    });
+
+                    // Compute repeating model using frame-by-frame MINIMUM
+                    // Minimum captures the instrumental baseline better than median
+                    // because vocals add energy on top of the baseline
+                    float[][] repeatingModel = new float[numFrames][numBins];
+
+                    for (int frame = 0; frame < numFrames; frame++) {
+                        for (int k = 0; k < numBins; k++) {
+                            // Collect magnitude values at this position in the period across all repetitions
+                            int frameInPeriod = frame % periodInFrames;
+
+                            // Find minimum magnitude across all repetitions at this position
+                            // This captures the baseline instrumental that's always present
+                            float minValue = Float.MAX_VALUE;
+                            for (int p = frameInPeriod; p < numFrames; p += periodInFrames) {
+                                if (magnitude[p][k] < minValue) {
+                                    minValue = magnitude[p][k];
+                                }
+                            }
+
+                            repeatingModel[frame][k] = minValue;
+                        }
+
+                        if (frame % 100 == 0) {
+                            final int progress = (frame * 100) / numFrames;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    statusView.setText("Model: " + progress + "%");
+                                }
+                            });
+                        }
+                    }
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Creating masks...");
+                        }
+                    });
+
+                    // Create soft time-frequency masks using ratio formula (matches Python reference)
+                    float[][] backgroundMask = new float[numFrames][numBins];
+                    float[][] foregroundMask = new float[numFrames][numBins];
+                    float eps = 1e-10f;
+
+                    // Debug: sample values
+                    float sumBgMask = 0;
+                    float sumFgMask = 0;
+                    int sampleCount = 0;
+
+                    for (int frame = 0; frame < numFrames; frame++) {
+                        for (int k = 0; k < numBins; k++) {
+                            float original = magnitude[frame][k];
+                            float repeating = repeatingModel[frame][k];
+
+                            // Use Wiener-like filtering with aggressive separation
+                            // The residual (non-repeating part) is the difference
+                            float residual = Math.max(original - repeating, 0.0f);
+
+                            // Use higher power for more aggressive separation
+                            // This emphasizes differences between repeating and non-repeating
+                            float power = 2.0f;
+                            float repeatingPow = (float) Math.pow(repeating + eps, power);
+                            float residualPow = (float) Math.pow(residual + eps, power);
+
+                            // Compute masks with aggressive Wiener filter
+                            float denominator = repeatingPow + residualPow + eps;
+                            backgroundMask[frame][k] = repeatingPow / denominator;
+                            foregroundMask[frame][k] = residualPow / denominator;
+
+                            // Debug: accumulate for average
+                            if (frame % 10 == 0 && k < 100) {
+                                sumBgMask += backgroundMask[frame][k];
+                                sumFgMask += foregroundMask[frame][k];
+                                sampleCount++;
+                            }
+                        }
+                    }
+
+                    final float avgBgMask = sumBgMask / sampleCount;
+                    final float avgFgMask = sumFgMask / sampleCount;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Avg masks - BG: " + String.format("%.3f", avgBgMask) + ", FG: " + String.format("%.3f", avgFgMask));
+                        }
+                    });
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Reconstructing audio...");
+                        }
+                    });
+
+                    // Initialize output arrays (use float for better precision during overlap-add)
+                    float[] vocalFloat = new float[numSamples];
+                    float[] instrumentalFloat = new float[numSamples];
+                    float[] windowSum = new float[numSamples];
+                    java.util.Arrays.fill(vocalFloat, 0.0f);
+                    java.util.Arrays.fill(instrumentalFloat, 0.0f);
+                    java.util.Arrays.fill(windowSum, 0.0f);
+
+                    // Inverse STFT with overlap-add
+                    for (int frame = 0; frame < numFrames; frame++) {
+                        int startIdx = frame * hopSize;
+
+                        // Apply masks
+                        float[] vocalMag = new float[numBins];
+                        float[] instrMag = new float[numBins];
+                        for (int k = 0; k < numBins; k++) {
+                            vocalMag[k] = magnitude[frame][k] * foregroundMask[frame][k];
+                            instrMag[k] = magnitude[frame][k] * backgroundMask[frame][k];
+                        }
+
+                        // Compute inverse FFT using Kiss FFT
+                        float[] vocalFrame = new float[windowSize];
+                        float[] instrumentalFrame = new float[windowSize];
+                        computeIFFT(vocalMag, phase[frame], vocalFrame, windowSize);
+                        computeIFFT(instrMag, phase[frame], instrumentalFrame, windowSize);
+
+                        // Apply synthesis window and overlap-add
+                        for (int i = 0; i < windowSize && (startIdx + i) < numSamples; i++) {
+                            // Use Hanning window for synthesis (same as analysis)
+                            float window = (float) (0.5 * (1 - Math.cos(2 * Math.PI * i / (windowSize - 1))));
+
+                            vocalFloat[startIdx + i] += vocalFrame[i] * window;
+                            instrumentalFloat[startIdx + i] += instrumentalFrame[i] * window;
+                            windowSum[startIdx + i] += window * window; // Track window energy for normalization
+                        }
+
+                        if (frame % 100 == 0) {
+                            final int progress = (frame * 100) / numFrames;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    statusView.setText("ISTFT: " + progress + "%");
+                                }
+                            });
+                        }
+                    }
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Normalizing and resampling...");
+                        }
+                    });
+
+                    // Normalize by window sum
+                    for (int i = 0; i < numSamples; i++) {
+                        if (windowSum[i] > 1e-8f) {
+                            vocalFloat[i] /= windowSum[i];
+                            instrumentalFloat[i] /= windowSum[i];
+                        }
+                    }
+
+                    // Resample to 2x speed (similar to onSpeedUpClick)
+                    // This compensates for any slowdown and improves quality
+                    int resampleRate = 2;
+                    int resampledLength = numSamples / resampleRate;
+
+                    vocalSamples = new short[resampledLength];
+                    instrumentalSamples = new short[resampledLength];
+
+                    for (int i = 0; i < resampledLength; i++) {
+                        int srcIdx = i * resampleRate;
+                        // Convert to short with clipping
+                        vocalSamples[i] = (short) Math.max(-32768, Math.min(32767, vocalFloat[srcIdx]));
+                        instrumentalSamples[i] = (short) Math.max(-32768, Math.min(32767, instrumentalFloat[srcIdx]));
+                    }
+
+                    // Store the sample rate for playback (maintain original rate since we resampled)
+                    repetSampleRate = actualSampleRate;
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("REPET processing complete!");
+                        }
+                    });
+
+                } catch (Exception e) {
+                    final String errorMsg = e.getMessage();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("REPET error: " + errorMsg);
+                        }
+                    });
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    // Helper method to stop any currently playing audio
+    private void stopCurrentAudio() {
+        if (currentAudioTrack != null) {
+            try {
+                if (currentAudioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
+                    currentAudioTrack.stop();
+                }
+                currentAudioTrack.release();
+            } catch (Exception e) {
+                // Ignore errors during cleanup
+            }
+            currentAudioTrack = null;
+        }
+    }
+
+    public void REPETVocalClick(View view) {
+        if (vocalSamples == null) {
+            statusView.setText("Please run REPET first!");
+            return;
+        }
+
+        // Stop any currently playing audio
+        stopCurrentAudio();
+
+        try {
+            // Play vocal (foreground) PCM data using AudioTrack with correct sample rate
+            currentAudioTrack = new AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    repetSampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    vocalSamples.length * 2,
+                    AudioTrack.MODE_STATIC
+            );
+
+            // Convert short array to byte array for AudioTrack
+            ByteBuffer outBuffer = ByteBuffer.allocate(vocalSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+            for (short s : vocalSamples) {
+                outBuffer.putShort(s);
+            }
+
+            currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+            currentAudioTrack.play();
+            statusView.setText("Playing vocal track at " + repetSampleRate + " Hz...");
+        } catch (Exception e) {
+            statusView.setText("Vocal playback error: " + e.getMessage());
+        }
+    }
+
+    public void REPETInstrumentalClick(View view) {
+        if (instrumentalSamples == null) {
+            statusView.setText("Please run REPET first!");
+            return;
+        }
+
+        // Stop any currently playing audio
+        stopCurrentAudio();
+
+        try {
+            // Play instrumental (background) PCM data using AudioTrack with correct sample rate
+            currentAudioTrack = new AudioTrack(
+                    AudioManager.STREAM_MUSIC,
+                    repetSampleRate,
+                    AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    instrumentalSamples.length * 2,
+                    AudioTrack.MODE_STATIC
+            );
+
+            // Convert short array to byte array for AudioTrack
+            ByteBuffer outBuffer = ByteBuffer.allocate(instrumentalSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+            for (short s : instrumentalSamples) {
+                outBuffer.putShort(s);
+            }
+
+            currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+            currentAudioTrack.play();
+            statusView.setText("Playing instrumental track at " + repetSampleRate + " Hz...");
+        } catch (Exception e) {
+            statusView.setText("Instrumental playback error: " + e.getMessage());
+        }
+    }
+
+    public void pitchUpClick(View view) {
+        // TODO: Implement pitch up functionality
+        statusView.setText("Pitch up clicked");
     }
 //    -------------------------------------------------------------
 
@@ -423,4 +923,8 @@ public class MainActivity extends Activity
     public static native void stopPlay();
 
     public static native float getFreqUpdate();
+
+    // REPET native FFT functions
+    public static native void computeFFT(float[] input, float[] magnitude, float[] phase, int size);
+    public static native void computeIFFT(float[] magnitude, float[] phase, float[] output, int size);
 }

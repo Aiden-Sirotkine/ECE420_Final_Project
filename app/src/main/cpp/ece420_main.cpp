@@ -11,6 +11,14 @@
 extern "C" {
 JNIEXPORT float JNICALL
 Java_com_ece420_lab4_MainActivity_getFreqUpdate(JNIEnv *env, jclass);
+
+JNIEXPORT void JNICALL
+Java_com_ece420_lab4_MainActivity_computeFFT(JNIEnv *env, jclass, jfloatArray input,
+                                              jfloatArray magnitude, jfloatArray phase, jint size);
+
+JNIEXPORT void JNICALL
+Java_com_ece420_lab4_MainActivity_computeIFFT(JNIEnv *env, jclass, jfloatArray magnitude,
+                                               jfloatArray phase, jfloatArray output, jint size);
 }
 
 // Student Variables
@@ -154,4 +162,98 @@ void ece420ProcessFrame(sample_buf *dataBuf) {
 JNIEXPORT float JNICALL
 Java_com_ece420_lab4_MainActivity_getFreqUpdate(JNIEnv *env, jclass) {
     return lastFreqDetected;
+}
+
+// FFT wrapper for REPET algorithm
+JNIEXPORT void JNICALL
+Java_com_ece420_lab4_MainActivity_computeFFT(JNIEnv *env, jclass, jfloatArray input,
+                                              jfloatArray magnitude, jfloatArray phase, jint size) {
+    // Get input array
+    jfloat *inputData = env->GetFloatArrayElements(input, NULL);
+
+    // Allocate Kiss FFT structures
+    kiss_fft_cfg cfg = kiss_fft_alloc(size, 0, 0, 0);
+    kiss_fft_cpx* cx_in = new kiss_fft_cpx[size];
+    kiss_fft_cpx* cx_out = new kiss_fft_cpx[size];
+
+    // Fill input (real data, zero imaginary)
+    for (int i = 0; i < size; i++) {
+        cx_in[i].r = inputData[i];
+        cx_in[i].i = 0.0f;
+    }
+
+    // Perform FFT
+    kiss_fft(cfg, cx_in, cx_out);
+
+    // Compute magnitude and phase
+    int outputSize = size / 2 + 1;
+    jfloat *magData = new jfloat[outputSize];
+    jfloat *phaseData = new jfloat[outputSize];
+
+    for (int i = 0; i < outputSize; i++) {
+        float real = cx_out[i].r;
+        float imag = cx_out[i].i;
+        magData[i] = sqrtf(real * real + imag * imag);
+        phaseData[i] = atan2f(imag, real);
+    }
+
+    // Copy results back to Java arrays
+    env->SetFloatArrayRegion(magnitude, 0, outputSize, magData);
+    env->SetFloatArrayRegion(phase, 0, outputSize, phaseData);
+
+    // Cleanup
+    delete[] magData;
+    delete[] phaseData;
+    env->ReleaseFloatArrayElements(input, inputData, JNI_ABORT);
+    kiss_fft_free(cfg);
+    delete[] cx_in;
+    delete[] cx_out;
+}
+
+// Inverse FFT wrapper for REPET algorithm
+JNIEXPORT void JNICALL
+Java_com_ece420_lab4_MainActivity_computeIFFT(JNIEnv *env, jclass, jfloatArray magnitude,
+                                               jfloatArray phase, jfloatArray output, jint size) {
+    // Get magnitude and phase arrays
+    jfloat *magData = env->GetFloatArrayElements(magnitude, NULL);
+    jfloat *phaseData = env->GetFloatArrayElements(phase, NULL);
+
+    // Allocate Kiss FFT structures for inverse
+    kiss_fft_cfg cfg = kiss_fft_alloc(size, 1, 0, 0); // 1 = inverse FFT
+    kiss_fft_cpx* cx_in = new kiss_fft_cpx[size];
+    kiss_fft_cpx* cx_out = new kiss_fft_cpx[size];
+
+    // Reconstruct complex spectrum from magnitude and phase
+    int halfSize = size / 2 + 1;
+    for (int i = 0; i < halfSize; i++) {
+        cx_in[i].r = magData[i] * cosf(phaseData[i]);
+        cx_in[i].i = magData[i] * sinf(phaseData[i]);
+    }
+
+    // Mirror for negative frequencies (Hermitian symmetry for real output)
+    for (int i = halfSize; i < size; i++) {
+        int mirrorIdx = size - i;
+        cx_in[i].r = cx_in[mirrorIdx].r;
+        cx_in[i].i = -cx_in[mirrorIdx].i;
+    }
+
+    // Perform inverse FFT
+    kiss_fft(cfg, cx_in, cx_out);
+
+    // Extract real part and normalize
+    jfloat *outputData = new jfloat[size];
+    for (int i = 0; i < size; i++) {
+        outputData[i] = cx_out[i].r / size; // Normalize by size
+    }
+
+    // Copy result back to Java array
+    env->SetFloatArrayRegion(output, 0, size, outputData);
+
+    // Cleanup
+    delete[] outputData;
+    env->ReleaseFloatArrayElements(magnitude, magData, JNI_ABORT);
+    env->ReleaseFloatArrayElements(phase, phaseData, JNI_ABORT);
+    kiss_fft_free(cfg);
+    delete[] cx_in;
+    delete[] cx_out;
 }

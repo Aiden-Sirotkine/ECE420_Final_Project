@@ -33,6 +33,50 @@
         android:layout_centerHorizontal="false" />
 
     <Button
+        android:id="@+id/repet"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="12dp"
+        android:onClick="REPETClick"
+        android:text="repet" />
+
+    <Button
+        android:id="@+id/repet_vocal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/repet"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="24dp"
+        android:onClick="REPETVocalClick"
+        android:text="repet vocal" />
+
+    <Button
+        android:id="@+id/repet_instrumental_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/repet_vocal"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="24dp"
+        android:onClick="REPETInstrumentalClick"
+        android:text="repet instrumental" />
+
+    <Button
+        android:id="@+id/pitch_up_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/repet_instrumental_button"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="24dp"
+        android:onClick="pitchUpClick"
+        android:text="pitch up" />
+
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/GetParam"
@@ -61,4 +105,3 @@
         android:textSize="36sp" />
 
 </RelativeLayout>
-

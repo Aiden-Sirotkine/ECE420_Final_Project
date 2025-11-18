@@ -1,4 +1,4 @@
-# Install script for directory: /home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/src/main/cpp
+# Install script for directory: /Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/src/main/cpp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 # Set default install directory permissions.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "/home/aidensiro/Android/Sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-objdump")
+  set(CMAKE_OBJDUMP "/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-objdump")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/.cxx/Debug/4f4du2c1/arm64-v8a/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/.cxx/Debug/4f4du2c1/arm64-v8a/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
