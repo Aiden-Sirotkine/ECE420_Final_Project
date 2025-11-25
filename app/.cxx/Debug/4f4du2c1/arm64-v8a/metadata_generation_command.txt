@@ -1,18 +1,18 @@
-                        -H/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/src/main/cpp
+                        -H/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/src/main/cpp
 -DCMAKE_SYSTEM_NAME=Android
 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 -DCMAKE_SYSTEM_VERSION=28
 -DANDROID_PLATFORM=android-28
 -DANDROID_ABI=arm64-v8a
 -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a
--DANDROID_NDK=/home/aidensiro/Android/Sdk/ndk/26.1.10909125
--DCMAKE_ANDROID_NDK=/home/aidensiro/Android/Sdk/ndk/26.1.10909125
--DCMAKE_TOOLCHAIN_FILE=/home/aidensiro/Android/Sdk/ndk/26.1.10909125/build/cmake/android.toolchain.cmake
--DCMAKE_MAKE_PROGRAM=/home/aidensiro/Android/Sdk/cmake/3.22.1/bin/ninja
--DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a
--DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a
+-DANDROID_NDK=/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125
+-DCMAKE_ANDROID_NDK=/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125
+-DCMAKE_TOOLCHAIN_FILE=/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125/build/cmake/android.toolchain.cmake
+-DCMAKE_MAKE_PROGRAM=/Users/jaychiang/Library/Android/sdk/cmake/3.22.1/bin/ninja
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a
 -DCMAKE_BUILD_TYPE=Debug
--B/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/.cxx/Debug/4f4du2c1/arm64-v8a
+-B/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/.cxx/Debug/4f4du2c1/arm64-v8a
 -GNinja
 -DANDROID_STL=c++_static
                         Build command args: []
