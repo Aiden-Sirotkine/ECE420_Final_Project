@@ -1,10 +1,10 @@
 # ninja log v5
-1	113	1763423571163035576	CMakeFiles/echo.dir/kiss_fft/kiss_fft.c.o	8c3dcddaeb25afe6
-1	370	1763423571415037829	CMakeFiles/echo.dir/ece420_lib.cpp.o	eefdb848664604a2
-0	442	1763423571489038491	CMakeFiles/echo.dir/audio_common.cpp.o	557d93e61b028d7e
-1	446	1763423571493038526	CMakeFiles/echo.dir/ece420_main.cpp.o	e8982ab301f085a6
-0	460	1763423571507038652	CMakeFiles/echo.dir/audio_recorder.cpp.o	c7378af9a5b116f1
-0	463	1763423571512981925	CMakeFiles/echo.dir/audio_player.cpp.o	947a1356defbfad1
-0	464	1763423571511038687	CMakeFiles/echo.dir/debug_utils.cpp.o	688a2afac5204e96
-0	465	1763423571513339839	CMakeFiles/echo.dir/audio_main.cpp.o	3f9ade6d8679e5af
-466	566	1763423571616039626	/home/aidensiro/CodingStuff/ECE420/REPET_FINAL PROJECT/app/build/intermediates/cxx/Debug/4f4du2c1/obj/x86_64/libecho.so	28bee5c0db895850
+1	51	1764317667505194560	CMakeFiles/echo.dir/kiss_fft/kiss_fft.c.o	6a2d7a53010f82a9
+1	233	1764317667686873161	CMakeFiles/echo.dir/ece420_lib.cpp.o	d4d9f8e6f05af2a8
+0	243	1764317667696180033	CMakeFiles/echo.dir/audio_common.cpp.o	f8297e76f6f1a94f
+0	255	1764317667709245036	CMakeFiles/echo.dir/audio_recorder.cpp.o	d7f99ef7041a3ba3
+0	257	1764317667711025603	CMakeFiles/echo.dir/debug_utils.cpp.o	8fd3f633071b20a7
+0	259	1764317667711480974	CMakeFiles/echo.dir/audio_player.cpp.o	9dcdc4b4f2067044
+3	262	1764317667715292397	CMakeFiles/echo.dir/ece420_main.cpp.o	e3f74100e7d0cf78
+0	270	1764317667723904275	CMakeFiles/echo.dir/audio_main.cpp.o	b3424b79939aa555
+270	307	1764317667761790964	/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/build/intermediates/cxx/Debug/4f4du2c1/obj/x86_64/libecho.so	213d0c777e05ea17

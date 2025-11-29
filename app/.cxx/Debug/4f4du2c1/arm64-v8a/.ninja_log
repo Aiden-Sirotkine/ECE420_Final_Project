@@ -8,3 +8,22 @@
 1	354	1764053287322212130	CMakeFiles/echo.dir/audio_main.cpp.o	e10a015cddbd8a65
 4	357	1764053287326082878	CMakeFiles/echo.dir/audio_recorder.cpp.o	bc56094f7602823d
 357	393	1764053287361722291	/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a/libecho.so	751003a5c2656856
+3	468	1764317544531603939	CMakeFiles/echo.dir/kiss_fft/kiss_fft.c.o	56ea23c2954a42c9
+3	783	1764317544847825954	CMakeFiles/echo.dir/ece420_lib.cpp.o	1bbcfee0737e8612
+0	785	1764317544851973957	CMakeFiles/echo.dir/audio_common.cpp.o	4ae98f53389212d8
+5	794	1764317544861224496	CMakeFiles/echo.dir/ece420_main.cpp.o	4d017e7ea858db1e
+2	803	1764317544870678992	CMakeFiles/echo.dir/debug_utils.cpp.o	1eee3a7799dafd6e
+1	804	1764317544871038530	CMakeFiles/echo.dir/audio_main.cpp.o	e10a015cddbd8a65
+2	805	1764317544871790690	CMakeFiles/echo.dir/audio_recorder.cpp.o	bc56094f7602823d
+2	805	1764317544872417142	CMakeFiles/echo.dir/audio_player.cpp.o	930fdefab79bb462
+805	944	1764317545011301725	/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a/libecho.so	751003a5c2656856
+0	10	0	clean	576585d63ffa446b
+2	234	1764317665516751312	CMakeFiles/echo.dir/kiss_fft/kiss_fft.c.o	56ea23c2954a42c9
+2	402	1764317665684835790	CMakeFiles/echo.dir/ece420_lib.cpp.o	1bbcfee0737e8612
+1	427	1764317665709871348	CMakeFiles/echo.dir/audio_common.cpp.o	4ae98f53389212d8
+1	429	1764317665711622999	CMakeFiles/echo.dir/audio_recorder.cpp.o	bc56094f7602823d
+2	442	1764317665723986175	CMakeFiles/echo.dir/debug_utils.cpp.o	1eee3a7799dafd6e
+2	444	1764317665727031689	CMakeFiles/echo.dir/ece420_main.cpp.o	4d017e7ea858db1e
+1	445	1764317665728457634	CMakeFiles/echo.dir/audio_player.cpp.o	930fdefab79bb462
+1	451	1764317665734741534	CMakeFiles/echo.dir/audio_main.cpp.o	e10a015cddbd8a65
+451	567	1764317665849647131	/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/build/intermediates/cxx/Debug/4f4du2c1/obj/arm64-v8a/libecho.so	751003a5c2656856

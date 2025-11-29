@@ -18,8 +18,10 @@ package com.ece420.lab4;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.Manifest;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -67,8 +69,11 @@ public class MainActivity extends Activity
     Boolean isPlaying = false;
     // Static Values
     private static final int AUDIO_ECHO_REQUEST = 0;
+    private static final int FILE_PICKER_REQUEST = 1;
     private static final int FRAME_SIZE = 1024;
 
+    // File picker
+    private Uri selectedAudioUri = null;
 
 //    -------------------------------------------------------
     Button somethingButton;
@@ -92,6 +97,21 @@ public class MainActivity extends Activity
     private short[] instrumentalSamples = null;
     private int repetSampleRate = 44100; // Store the sample rate for playback
     private AudioTrack currentAudioTrack = null; // Track currently playing audio
+
+    // WSOLA caching variables
+    private short[] wsolaSamples = null;
+    private int wsolaSampleRate = 44100;
+
+    // Speed resampling caching variables
+    private short[] speedSamples = null;
+    private int speedSampleRate = 44100;
+
+    // Crop caching variables
+    private short[] croppedSamples = null;
+    private int croppedSampleRate = 44100;
+
+    // Mix caching variables
+    private short[] mixedSamples = null;
 
 //    --------------------------------------------
 
@@ -194,17 +214,28 @@ public class MainActivity extends Activity
             deleteSLEngine();
             isPlaying = false;
         }
-
-// -------------------------------------------
-        if (supportRecording) {
-            if (isPlaying) {
-                stopPlay();
-            }
-            deleteSLEngine();
-            isPlaying = false;
-        }
         super.onDestroy();
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == FILE_PICKER_REQUEST && resultCode == RESULT_OK) {
+            if (data != null) {
+                selectedAudioUri = data.getData();
+
+                // Clear all cached results when new file is loaded
+                clearAllCaches();
+
+                // Show confirmation
+                String fileName = selectedAudioUri.getLastPathSegment();
+                statusView.setText("Loaded: " + fileName);
+                Toast.makeText(this, "Audio file loaded: " + fileName, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+// -------------------------------------------
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -276,8 +307,8 @@ public class MainActivity extends Activity
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.seekTo(0); // Restart from beginning if already playing
             }
-        mediaPlayer.start();
-    }
+            mediaPlayer.start();
+        }
 
         if (thing.equals("something")) {
             thing = "nothing";
@@ -286,6 +317,13 @@ public class MainActivity extends Activity
         }
         somethingButton.setText(thing);
         return;
+    }
+
+    public void loadFileClick(View view) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.setType("audio/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(intent, FILE_PICKER_REQUEST);
     }
 
     public void resampleClick(View view) {
@@ -302,24 +340,52 @@ public class MainActivity extends Activity
 
 
     public void onSpeedUpClick(View view) {
+        // Check if Speed result is already cached
+        if (speedSamples != null) {
+            statusView.setText("Playing cached Speed result...");
+            stopCurrentAudio();
+            try {
+                currentAudioTrack = new AudioTrack(
+                        AudioManager.STREAM_MUSIC,
+                        speedSampleRate,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        speedSamples.length * 2,
+                        AudioTrack.MODE_STATIC
+                );
+                ByteBuffer outBuffer = ByteBuffer.allocate(speedSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+                for (short s : speedSamples) {
+                    outBuffer.putShort(s);
+                }
+                currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+                currentAudioTrack.play();
+                statusView.setText("Playing cached Speed result");
+            } catch (Exception e) {
+                statusView.setText("Speed playback error: " + e.getMessage());
+            }
+            return;
+        }
+
+        statusView.setText("Processing Speed resampling...");
         try {
-            // 1. Load WAV file from raw resources
-            InputStream inputStream = getResources().openRawResource(R.raw.audio_file);
+            // 1. Load WAV file from user-selected file or fallback to raw resources
+            InputStream inputStream = loadAudioFromSource();
             byte[] wavData = new byte[inputStream.available()];
             inputStream.read(wavData);
             inputStream.close();
 
-            // 2. Parse WAV header and extract PCM data (assume 44-byte header)
-            int sampleRate = 44100;
-            int headerSize = 44;
-            if (wavData.length >= 28) { // Ensure header is large enough
-                // Sample rate is at bytes 24-27 (little-endian)
-                sampleRate = ((wavData[27] & 0xFF) << 24) |
-                        ((wavData[26] & 0xFF) << 16) |
-                        ((wavData[25] & 0xFF) << 8) |
-                        ((wavData[24] & 0xFF));
+            // 2. Parse WAV header and extract PCM data
+            int[] headerInfo = parseWavHeader(wavData);
+            int sampleRate = headerInfo[0];
+            int headerSize = headerInfo[1];
+
+            // Check for parsing error
+            if (sampleRate == -1 || headerSize == -1) {
+                statusView.setText("Cannot process: Invalid audio format");
+                return;
             }
 
+            statusView.setText("Speed: Sample rate = " + sampleRate + " Hz");
 
             int pcmDataSize = wavData.length - headerSize;
             byte[] pcmData = new byte[pcmDataSize];
@@ -340,6 +406,10 @@ public class MainActivity extends Activity
             for (int i = 0; i < resampledSamples.length; i+=1) {
                 resampledSamples[i] = originalSamples[(int) (i* rate)];
             }
+
+            // Store Speed result in cache
+            speedSamples = resampledSamples;
+            speedSampleRate = sampleRate;
 
             // 4. Play resampled PCM data using AudioTrack
             sampleRate = (int) (sampleRate); // or parse from WAV header
@@ -370,21 +440,28 @@ public class MainActivity extends Activity
             @Override
             public void run() {
                 try {
-                    // Load WAV file from raw resources
-                    InputStream inputStream = getResources().openRawResource(R.raw.audio_file);
+                    // Load WAV file from user-selected file or fallback to raw resources
+                    InputStream inputStream = loadAudioFromSource();
                     byte[] wavData = new byte[inputStream.available()];
                     inputStream.read(wavData);
                     inputStream.close();
 
-                    // Parse WAV header properly to get sample rate
-                    ByteBuffer headerBuffer = ByteBuffer.wrap(wavData).order(ByteOrder.LITTLE_ENDIAN);
+                    // Parse WAV header and extract PCM data
+                    int[] headerInfo = parseWavHeader(wavData);
+                    final int actualSampleRate = headerInfo[0];
+                    int headerSize = headerInfo[1];
 
-                    // Skip RIFF header (4 bytes)
-                    headerBuffer.position(24); // Jump to sample rate position
-                    final int actualSampleRate = headerBuffer.getInt();
+                    // Check for parsing error
+                    if (actualSampleRate == -1 || headerSize == -1) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                statusView.setText("Cannot process: Invalid audio format");
+                            }
+                        });
+                        return;
+                    }
 
-                    // Parse WAV header and extract PCM data (assume 44-byte header)
-                    int headerSize = 44;
                     int pcmDataSize = wavData.length - headerSize;
                     byte[] pcmData = new byte[pcmDataSize];
                     System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
@@ -392,6 +469,21 @@ public class MainActivity extends Activity
                     // Convert PCM bytes to short samples (16-bit PCM, mono)
                     ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
                     int numSamples = pcmDataSize / 2;
+
+                    // Limit audio length to prevent OutOfMemoryError
+                    // Max 30 seconds at 48kHz = 1,440,000 samples
+                    final int maxSamples = 1440000;
+                    if (numSamples > maxSamples) {
+                        final int durationSec = numSamples / actualSampleRate;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                statusView.setText("Audio too long (" + durationSec + "s). Max 30 seconds. Truncating...");
+                            }
+                        });
+                        numSamples = maxSamples;
+                    }
+
                     short[] samples = new short[numSamples];
                     for (int i = 0; i < numSamples; i++) {
                         samples[i] = pcmBuffer.getShort();
@@ -424,8 +516,20 @@ public class MainActivity extends Activity
                     }
 
                     // Compute STFT (magnitude and phase)
-                    float[][] magnitude = new float[numFrames][numBins];
-                    float[][] phase = new float[numFrames][numBins];
+                    float[][] magnitude = null;
+                    float[][] phase = null;
+                    try {
+                        magnitude = new float[numFrames][numBins];
+                        phase = new float[numFrames][numBins];
+                    } catch (OutOfMemoryError e) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                statusView.setText("Out of memory. Try shorter audio (max 30s).");
+                            }
+                        });
+                        return;
+                    }
 
                     for (int frame = 0; frame < numFrames; frame++) {
                         int startIdx = frame * hopSize;
@@ -516,10 +620,11 @@ public class MainActivity extends Activity
                     final int detectedPeriodFrames = periodInFrames;
                     final float detectedPeriodSeconds = (float) (periodInFrames * hopSize) / actualSampleRate;
                     final int numReps = numFrames / periodInFrames;
+                    final float maxAutocorrVal = maxAutocorr;
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            statusView.setText("Period: " + String.format("%.2f", detectedPeriodSeconds) + "s, " + numReps + " reps");
+                            statusView.setText("Period: " + String.format("%.2f", detectedPeriodSeconds) + "s, " + numReps + " reps, autocorr: " + String.format("%.3f", maxAutocorrVal));
                         }
                     });
 
@@ -530,23 +635,26 @@ public class MainActivity extends Activity
                         }
                     });
 
-                    // Compute repeating model using frame-by-frame MINIMUM
-                    // Minimum captures the instrumental baseline better than median
-                    // because vocals add energy on top of the baseline
-                    // OPTIMIZED: Compute minimum once per period position, then tile
+                    // Compute repeating model using frame-by-frame MEDIAN
+                    // Median captures the instrumental baseline better than minimum
+                    // because it's robust to outliers (silence or very loud vocals)
+                    // OPTIMIZED: Compute median once per period position, then tile
                     float[][] periodModel = new float[periodInFrames][numBins];
 
-                    // Step 1: Compute minimum for one period (much faster!)
+                    // Step 1: Compute median for one period
                     for (int frameInPeriod = 0; frameInPeriod < periodInFrames; frameInPeriod++) {
                         for (int k = 0; k < numBins; k++) {
-                            // Find minimum magnitude across all repetitions at this position
-                            float minValue = Float.MAX_VALUE;
+                            // Collect all magnitude values across repetitions at this position
+                            java.util.ArrayList<Float> values = new java.util.ArrayList<>();
                             for (int p = frameInPeriod; p < numFrames; p += periodInFrames) {
-                                if (magnitude[p][k] < minValue) {
-                                    minValue = magnitude[p][k];
-                                }
+                                values.add(magnitude[p][k]);
                             }
-                            periodModel[frameInPeriod][k] = minValue;
+
+                            // Find median
+                            java.util.Collections.sort(values);
+                            int medianIdx = values.size() / 2;
+                            float medianValue = values.get(medianIdx);
+                            periodModel[frameInPeriod][k] = medianValue;
                         }
 
                         if (frameInPeriod % 100 == 0) {
@@ -562,10 +670,16 @@ public class MainActivity extends Activity
 
                     // Step 2: Tile the period model to all frames
                     float[][] repeatingModel = new float[numFrames][numBins];
+                    float modelSum = 0;
+                    int modelCount = 0;
                     for (int frame = 0; frame < numFrames; frame++) {
                         int frameInPeriod = frame % periodInFrames;
                         for (int k = 0; k < numBins; k++) {
                             repeatingModel[frame][k] = periodModel[frameInPeriod][k];
+                            if (frame < 10 && k < 10) {
+                                modelSum += periodModel[frameInPeriod][k];
+                                modelCount++;
+                            }
                         }
 
                         if (frame % 100 == 0) {
@@ -578,6 +692,14 @@ public class MainActivity extends Activity
                             });
                         }
                     }
+
+                    final float avgModelVal = modelSum / modelCount;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Avg model value: " + String.format("%.2f", avgModelVal));
+                        }
+                    });
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -755,6 +877,131 @@ public class MainActivity extends Activity
         }
     }
 
+    private void clearAllCaches() {
+        vocalSamples = null;
+        instrumentalSamples = null;
+        wsolaSamples = null;
+        speedSamples = null;
+        croppedSamples = null;
+        mixedSamples = null;
+        statusView.setText("All cached results cleared");
+    }
+
+    private InputStream loadAudioFromSource() throws Exception {
+        if (selectedAudioUri != null) {
+            // Load from user-selected file
+            return getContentResolver().openInputStream(selectedAudioUri);
+        } else {
+            // Fallback to built-in audio file
+            return getResources().openRawResource(R.raw.audio_file);
+        }
+    }
+
+    // Helper method to parse WAV file and extract sample rate and header size
+    private int[] parseWavHeader(byte[] wavData) {
+        int defaultSampleRate = 44100;
+        int defaultHeaderSize = 44;
+
+        try {
+            // Verify minimum size
+            if (wavData.length < 44) {
+                final String msg = "File too small: " + wavData.length + " bytes";
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
+                    }
+                });
+                return new int[]{defaultSampleRate, defaultHeaderSize};
+            }
+
+            // Check file format
+            String header = new String(wavData, 0, 4, "ASCII");
+
+            // Detect file type
+            if (header.equals("ID3\u0000") || (wavData[0] == (byte)0xFF && (wavData[1] & 0xE0) == 0xE0)) {
+                // MP3 file
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "MP3 files not supported. Please use WAV format.", Toast.LENGTH_LONG).show();
+                        statusView.setText("Error: MP3 not supported");
+                    }
+                });
+                return new int[]{-1, -1}; // Error code
+            }
+
+            // Verify RIFF/WAVE headers
+            String riff = new String(wavData, 0, 4, "ASCII");
+            String wave = new String(wavData, 8, 4, "ASCII");
+
+            if (!riff.equals("RIFF") || !wave.equals("WAVE")) {
+                final String detectedFormat = "Unknown format. Header: " + riff;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, detectedFormat + ". Please use WAV files.", Toast.LENGTH_LONG).show();
+                        statusView.setText("Error: Not a WAV file");
+                    }
+                });
+                return new int[]{-1, -1}; // Error code
+            }
+
+            // Standard WAV: assume fmt chunk at position 12
+            ByteBuffer bb = ByteBuffer.wrap(wavData).order(ByteOrder.LITTLE_ENDIAN);
+
+            // Check if "fmt " is at expected position
+            String fmtCheck = new String(wavData, 12, 4, "ASCII");
+            if (fmtCheck.equals("fmt ")) {
+                // Standard format - sample rate at byte 24
+                bb.position(24);
+                int sampleRate = bb.getInt();
+
+                // Validate sample rate is reasonable (8kHz to 192kHz)
+                if (sampleRate >= 8000 && sampleRate <= 192000) {
+                    final int finalRate = sampleRate;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            statusView.setText("Loaded WAV: " + finalRate + " Hz");
+                        }
+                    });
+                    return new int[]{sampleRate, 44};
+                } else {
+                    final String msg = "Invalid sample rate: " + sampleRate + " Hz";
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            } else {
+                final String msg = "Non-standard WAV format. Expected 'fmt ' at byte 12, got: '" + fmtCheck + "'";
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+
+            // Fallback to default
+            return new int[]{defaultSampleRate, defaultHeaderSize};
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            final String errMsg = "Parse error: " + e.getMessage();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.this, errMsg, Toast.LENGTH_LONG).show();
+                }
+            });
+            return new int[]{defaultSampleRate, defaultHeaderSize};
+        }
+    }
+
     public void REPETVocalClick(View view) {
         if (vocalSamples == null) {
             statusView.setText("Please run REPET first!");
@@ -792,8 +1039,13 @@ public class MainActivity extends Activity
     public void REPETInstrumentalClick(View view) {
         if (instrumentalSamples == null) {
             statusView.setText("Please run REPET first!");
+            Toast.makeText(this, "No instrumental data. Run REPET processing first.", Toast.LENGTH_LONG).show();
             return;
         }
+
+        // Debug info
+        String debugInfo = "Instrumental: " + instrumentalSamples.length + " samples, " + repetSampleRate + " Hz";
+        Toast.makeText(this, debugInfo, Toast.LENGTH_SHORT).show();
 
         // Stop any currently playing audio
         stopCurrentAudio();
@@ -820,6 +1072,8 @@ public class MainActivity extends Activity
             statusView.setText("Playing instrumental track at " + repetSampleRate + " Hz...");
         } catch (Exception e) {
             statusView.setText("Instrumental playback error: " + e.getMessage());
+            Toast.makeText(this, "Playback error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            e.printStackTrace();
         }
     }
 
@@ -830,36 +1084,65 @@ public class MainActivity extends Activity
 
 
     public void WSOLAClick(View view) {
-        statusView.setText("Starting WSOLA pitch shift...");
+        // Check if WSOLA result is already cached
+        if (wsolaSamples != null) {
+            statusView.setText("Playing cached WSOLA result...");
+            stopCurrentAudio();
+            try {
+                currentAudioTrack = new AudioTrack(
+                        AudioManager.STREAM_MUSIC,
+                        wsolaSampleRate,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        wsolaSamples.length * 2,
+                        AudioTrack.MODE_STATIC
+                );
+                ByteBuffer outBuffer = ByteBuffer.allocate(wsolaSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+                for (short s : wsolaSamples) {
+                    outBuffer.putShort(s);
+                }
+                currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+                currentAudioTrack.play();
+                statusView.setText("Playing cached WSOLA result");
+            } catch (Exception e) {
+                statusView.setText("WSOLA playback error: " + e.getMessage());
+            }
+            return;
+        }
+
+        statusView.setText("Processing WSOLA pitch shift...");
 
         // Run WSOLA in background thread to avoid ANR
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // 1. Load WAV file from raw resources
-                    InputStream inputStream = getResources().openRawResource(R.raw.audio_file);
+                    // 1. Load WAV file from user-selected file or fallback to raw resources
+                    InputStream inputStream = loadAudioFromSource();
                     byte[] wavData = new byte[inputStream.available()];
                     inputStream.read(wavData);
                     inputStream.close();
 
-                    // 2. Parse WAV header and extract PCM data (assume 44-byte header)
-                    int headerSize = 44;
-                    final int sampleRate;
-                    if (wavData.length >= 28) { // Ensure header is large enough
-                        // Sample rate is at bytes 24-27 (little-endian)
-                        sampleRate = ((wavData[27] & 0xFF) << 24) |
-                                ((wavData[26] & 0xFF) << 16) |
-                                ((wavData[25] & 0xFF) << 8) |
-                                ((wavData[24] & 0xFF));
-                    } else {
-                        sampleRate = 44100;
+                    // 2. Parse WAV header and extract PCM data
+                    int[] headerInfo = parseWavHeader(wavData);
+                    final int sampleRate = headerInfo[0];
+                    int headerSize = headerInfo[1];
+
+                    // Check for parsing error
+                    if (sampleRate == -1 || headerSize == -1) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                statusView.setText("Cannot process: Invalid audio format");
+                            }
+                        });
+                        return;
                     }
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            statusView.setText("Loading audio...");
+                            statusView.setText("WSOLA: Sample rate = " + sampleRate + " Hz");
                         }
                     });
 
@@ -1002,6 +1285,10 @@ public class MainActivity extends Activity
                         }
                     });
 
+                    // Store WSOLA result in cache
+                    wsolaSamples = resampledSamples;
+                    wsolaSampleRate = sampleRate;
+
                     // 5. Play resampled PCM data using AudioTrack
                     AudioTrack audioTrack = new AudioTrack(
                             AudioManager.STREAM_MUSIC,
@@ -1043,24 +1330,52 @@ public class MainActivity extends Activity
     }
 
     public void cropClick(View view) {
+        // Check if Crop result is already cached
+        if (croppedSamples != null) {
+            statusView.setText("Playing cached Crop result...");
+            stopCurrentAudio();
+            try {
+                currentAudioTrack = new AudioTrack(
+                        AudioManager.STREAM_MUSIC,
+                        croppedSampleRate,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        croppedSamples.length * 2,
+                        AudioTrack.MODE_STATIC
+                );
+                ByteBuffer outBuffer = ByteBuffer.allocate(croppedSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+                for (short s : croppedSamples) {
+                    outBuffer.putShort(s);
+                }
+                currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+                currentAudioTrack.play();
+                statusView.setText("Playing cached Crop result");
+            } catch (Exception e) {
+                statusView.setText("Crop playback error: " + e.getMessage());
+            }
+            return;
+        }
+
+        statusView.setText("Processing Crop...");
         try {
-            // 1. Load WAV file from raw resources
-            InputStream inputStream = getResources().openRawResource(R.raw.audio_file);
+            // 1. Load WAV file from user-selected file or fallback to raw resources
+            InputStream inputStream = loadAudioFromSource();
             byte[] wavData = new byte[inputStream.available()];
             inputStream.read(wavData);
             inputStream.close();
 
-            // 2. Parse WAV header and extract PCM data (assume 44-byte header)
-            int headerSize = 44;
-            int sampleRate = 44100;
-            if (wavData.length >= 28) { // Ensure header is large enough
-                // Sample rate is at bytes 24-27 (little-endian)
-                sampleRate = ((wavData[27] & 0xFF) << 24) |
-                        ((wavData[26] & 0xFF) << 16) |
-                        ((wavData[25] & 0xFF) << 8) |
-                        ((wavData[24] & 0xFF));
+            // 2. Parse WAV header and extract PCM data
+            int[] headerInfo = parseWavHeader(wavData);
+            int sampleRate = headerInfo[0];
+            int headerSize = headerInfo[1];
+
+            // Check for parsing error
+            if (sampleRate == -1 || headerSize == -1) {
+                statusView.setText("Cannot process: Invalid audio format");
+                return;
             }
 
+            statusView.setText("Crop: Sample rate = " + sampleRate + " Hz");
 
             int pcmDataSize = wavData.length - headerSize;
             byte[] pcmData = new byte[pcmDataSize];
@@ -1089,6 +1404,10 @@ public class MainActivity extends Activity
             }
 //            short[] resampledSamples = originalSamples;
 
+            // Store Crop result in cache
+            croppedSamples = resampledSamples;
+            croppedSampleRate = sampleRate * 2;
+
             // 4. Play resampled PCM data using AudioTrack
             sampleRate *= 2; // or parse from WAV header
             AudioTrack audioTrack = new AudioTrack(
@@ -1116,6 +1435,34 @@ public class MainActivity extends Activity
             return;
         }
 
+        // Check if Mix result is already cached
+        if (mixedSamples != null) {
+            statusView.setText("Playing cached Mix result...");
+            stopCurrentAudio();
+            try {
+                currentAudioTrack = new AudioTrack(
+                        AudioManager.STREAM_MUSIC,
+                        repetSampleRate,
+                        AudioFormat.CHANNEL_OUT_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        mixedSamples.length * 2,
+                        AudioTrack.MODE_STATIC
+                );
+                ByteBuffer outBuffer = ByteBuffer.allocate(mixedSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+                for (short s : mixedSamples) {
+                    outBuffer.putShort(s);
+                }
+                currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+                currentAudioTrack.play();
+                statusView.setText("Playing cached Mix result");
+            } catch (Exception e) {
+                statusView.setText("Mix playback error: " + e.getMessage());
+            }
+            return;
+        }
+
+        statusView.setText("Processing Mix...");
+
         // Stop any currently playing audio
         stopCurrentAudio();
 
@@ -1137,7 +1484,7 @@ public class MainActivity extends Activity
 //         mixmixmixmixmixmixmixmixmixmixmixmixmixmixmixmixmixmixi
             // Ensure both arrays are the same length - use the shorter one as limit
             int minLength = Math.min(instrumentalSamples.length, vocalSamples.length);
-            short[] mixedSamples = new short[minLength];
+            short[] tempMixedSamples = new short[minLength];
 
             // Mix the samples
             for (int i = 0; i < minLength; i++) {
@@ -1151,12 +1498,15 @@ public class MainActivity extends Activity
                     mixed = Short.MIN_VALUE;
                 }
 
-                mixedSamples[i] = (short) mixed;
+                tempMixedSamples[i] = (short) mixed;
             }
 
+            // Store Mix result in cache
+            mixedSamples = tempMixedSamples;
+
             // Convert mixed short array to byte array for AudioTrack
-            ByteBuffer outBuffer = ByteBuffer.allocate(mixedSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
-            for (short s : mixedSamples) {
+            ByteBuffer outBuffer = ByteBuffer.allocate(tempMixedSamples.length * 2).order(ByteOrder.LITTLE_ENDIAN);
+            for (short s : tempMixedSamples) {
                 outBuffer.putShort(s);
             }
 
