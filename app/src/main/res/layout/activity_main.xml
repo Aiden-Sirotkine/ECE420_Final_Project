@@ -16,33 +16,14 @@
         android:layout_marginBottom="16dp"/>
 
     <Button
-        android:id="@+id/capture_control_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/StartEcho"
-        android:onClick="onEchoClick"
-        android:layout_below="@id/load_file_button"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"/>
-
-    <Button
-        android:id="@+id/do_something_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Something"
-        android:onClick="doSomethingClick"
-        android:layout_below="@id/capture_control_button"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp" />
-
-    <Button
         android:id="@+id/resample_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="resample"
+        android:text="Speed Up"
         android:onClick="resampleClick"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="false" />
+        android:layout_below="@id/load_file_button"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/crop_button"
@@ -112,15 +93,6 @@
         android:onClick="pitchUpClick"
         android:text="pitch up" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/GetParam"
-        android:id="@+id/get_parameter_button"
-        android:layout_above="@+id/statusView"
-        android:layout_alignParentStart="true"
-        android:onClick="getLowLatencyParameters" />
-
     <TextView android:text="@string/init_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -128,16 +100,5 @@
         android:id="@+id/statusView"
         android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"/>
-
-    <TextView
-        android:id="@+id/textFrequency"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="76dp"
-        android:text="Unvoiced"
-        android:textAppearance="@android:style/TextAppearance.Material.Headline"
-        android:textSize="36sp" />
 
 </RelativeLayout>

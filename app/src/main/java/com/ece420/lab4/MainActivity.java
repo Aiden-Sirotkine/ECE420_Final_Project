@@ -17,22 +17,14 @@
 package com.ece420.lab4;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.Manifest;
 import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioRecord;
-import android.os.AsyncTask;
+import android.media.AudioTrack;
+import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.Handler;
-//import android.support.annotation.NonNull;
-//import android.support.v4.app.ActivityCompat;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -41,42 +33,22 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-//  ADDED STUFF
-import android.media.MediaPlayer;
-import android.os.Bundle;
-import android.widget.Button;
-
-
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import android.media.AudioTrack;
 
 
-public class MainActivity extends Activity
-        implements ActivityCompat.OnRequestPermissionsResultCallback {
+public class MainActivity extends Activity {
 
     // UI Variables
-    Button   controlButton;
     TextView statusView;
-    static TextView freq_view;
-    String  nativeSampleRate;
-    String  nativeSampleBufSize;
-    boolean supportRecording;
-    Boolean isPlaying = false;
     // Static Values
-    private static final int AUDIO_ECHO_REQUEST = 0;
     private static final int FILE_PICKER_REQUEST = 1;
-    private static final int FRAME_SIZE = 1024;
 
     // File picker
     private Uri selectedAudioUri = null;
 
 //    -------------------------------------------------------
-    Button somethingButton;
     Button resampleButton;
     Button repetButton;
     Button repetVocalButton;
@@ -84,7 +56,6 @@ public class MainActivity extends Activity
     Button pitchUpButton;
     Button cropButton;
     Button mixButton;
-    String thing = "something";
     private MediaPlayer mediaPlayer;
     public static native boolean createSpeedAudioPlayer(String filePath, float speed);
     public static native void playSpeedAudio();
@@ -122,16 +93,10 @@ public class MainActivity extends Activity
         setContentView(R.layout.activity_main);
         super.setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        // Google NDK Stuff
-        controlButton = (Button)findViewById((R.id.capture_control_button));
+        // UI Elements
         statusView = (TextView)findViewById(R.id.statusView);
-        somethingButton = (Button)findViewById((R.id.do_something_button));
-//        resampleButton = (Button)findViewById((R.id.resample_button));
 
-
-        // ADDED CODE
-        // Initialize MediaPlayer with your audio file
-        // mediaPlayer = MediaPlayer.create(this, R.raw.audio_file);
+        // Initialize MediaPlayer
         initializeMediaPlayer();
         resampleButton = (Button) findViewById(R.id.resample_button);
         resampleButton.setOnClickListener(new View.OnClickListener() {
@@ -169,21 +134,7 @@ public class MainActivity extends Activity
             }
         });
 
-
-
 //        ---------------------------------------------
-        
-
-        queryNativeAudioParameters();
-        // initialize native audio system
-        updateNativeAudioUI();
-        if (supportRecording) {
-            createSLEngine(Integer.parseInt(nativeSampleRate), FRAME_SIZE);
-        }
-
-        // Setup UI
-        freq_view = (TextView)findViewById(R.id.textFrequency);
-        initializeFreqTextBackgroundTask(100);
     }
     @Override
     protected void onDestroy() {
@@ -197,7 +148,6 @@ public class MainActivity extends Activity
         }
 
         // Clean up MediaPlayer
-//        ADDED
         if (mediaPlayer != null) {
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.stop();
@@ -206,14 +156,6 @@ public class MainActivity extends Activity
             mediaPlayer = null;
         }
 
-        // Your existing cleanup
-        if (supportRecording) {
-            if (isPlaying) {
-                stopPlay();
-            }
-            deleteSLEngine();
-            isPlaying = false;
-        }
         super.onDestroy();
     }
 
@@ -259,66 +201,7 @@ public class MainActivity extends Activity
         return super.onOptionsItemSelected(item);
     }
 
-    private void startEcho() {
-        if(!supportRecording){
-            return;
-        }
-        if (!isPlaying) {
-            if(!createSLBufferQueueAudioPlayer()) {
-                statusView.setText(getString(R.string.error_player));
-                return;
-            }
-            if(!createAudioRecorder()) {
-                deleteSLBufferQueueAudioPlayer();
-                statusView.setText(getString(R.string.error_recorder));
-                return;
-            }
-            startPlay();   // this must include startRecording()
-            statusView.setText(getString(R.string.status_echoing));
-        } else {
-            stopPlay();  //this must include stopRecording()
-            updateNativeAudioUI();
-            deleteAudioRecorder();
-            deleteSLBufferQueueAudioPlayer();
-        }
-        isPlaying = !isPlaying;
-        controlButton.setText(getString((isPlaying == true) ?
-                R.string.StopEcho: R.string.StartEcho));
-    }
-
-    public void onEchoClick(View view) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
-                PackageManager.PERMISSION_GRANTED) {
-            statusView.setText(getString(R.string.status_record_perm));
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[] { Manifest.permission.RECORD_AUDIO },
-                    AUDIO_ECHO_REQUEST);
-            return;
-        }
-        startEcho();
-    }
-
-
-
     //    -----------------------------------------------------
-    public void doSomethingClick(View view) {
-        if (mediaPlayer != null) {
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.seekTo(0); // Restart from beginning if already playing
-            }
-            mediaPlayer.start();
-        }
-
-        if (thing.equals("something")) {
-            thing = "nothing";
-        } else {
-            thing = "something";
-        }
-        somethingButton.setText(thing);
-        return;
-    }
-
     public void loadFileClick(View view) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType("audio/*");
@@ -327,17 +210,8 @@ public class MainActivity extends Activity
     }
 
     public void resampleClick(View view) {
-
-        if (thing.equals("resample")) {
-            thing = "resample2";
-        } else {
-            thing = "resample";
-        }
-        resampleButton.setText(thing);
-        return;
+        onSpeedUpClick(view);
     }
-
-
 
     public void onSpeedUpClick(View view) {
         // Check if Speed result is already cached
@@ -471,14 +345,14 @@ public class MainActivity extends Activity
                     int numSamples = pcmDataSize / 2;
 
                     // Limit audio length to prevent OutOfMemoryError
-                    // Max 30 seconds at 48kHz = 1,440,000 samples
-                    final int maxSamples = 1440000;
+                    // Max ~156 seconds at 48kHz = 7,500,000 samples (with largeHeap enabled)
+                    final int maxSamples = 7500000;
                     if (numSamples > maxSamples) {
                         final int durationSec = numSamples / actualSampleRate;
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                statusView.setText("Audio too long (" + durationSec + "s). Max 30 seconds. Truncating...");
+                                statusView.setText("Audio too long (" + durationSec + "s). Max 156 seconds. Truncating...");
                             }
                         });
                         numSamples = maxSamples;
@@ -1530,99 +1404,6 @@ public class MainActivity extends Activity
     }
 //    -------------------------------------------------------------
 
-    public void getLowLatencyParameters(View view) {
-        updateNativeAudioUI();
-        return;
-    }
-
-    private void queryNativeAudioParameters() {
-        AudioManager myAudioMgr = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        nativeSampleRate  =  myAudioMgr.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
-        nativeSampleBufSize =myAudioMgr.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
-        int recBufSize = AudioRecord.getMinBufferSize(
-                Integer.parseInt(nativeSampleRate),
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT);
-        supportRecording = true;
-        if (recBufSize == AudioRecord.ERROR ||
-                recBufSize == AudioRecord.ERROR_BAD_VALUE) {
-            supportRecording = false;
-        }
-    }
-    private void updateNativeAudioUI() {
-        if (!supportRecording) {
-            statusView.setText(getString(R.string.error_no_mic));
-            controlButton.setEnabled(false);
-            return;
-        }
-
-        statusView.setText("nativeSampleRate    = " + nativeSampleRate + "\n" +
-                "nativeSampleBufSize = " + nativeSampleBufSize + "\n");
-
-    }
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        /*
-         * if any permission failed, the sample could not play
-         */
-        if (AUDIO_ECHO_REQUEST != requestCode) {
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            return;
-        }
-
-        if (grantResults.length != 1  ||
-                grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-            /*
-             * When user denied permission, throw a Toast to prompt that RECORD_AUDIO
-             * is necessary; also display the status on UI
-             * Then application goes back to the original state: it behaves as if the button
-             * was not clicked. The assumption is that user will re-click the "start" button
-             * (to retry), or shutdown the app in normal way.
-             */
-            statusView.setText(getString(R.string.error_no_permission));
-            Toast.makeText(getApplicationContext(),
-                    getString(R.string.prompt_permission),
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        /*
-         * When permissions are granted, we prompt the user the status. User would
-         * re-try the "start" button to perform the normal operation. This saves us the extra
-         * logic in code for async processing of the button listener.
-         */
-        statusView.setText("RECORD_AUDIO permission granted, touch " +
-                getString(R.string.StartEcho) + " to begin");
-
-        // The callback runs on app's thread, so we are safe to resume the action
-        startEcho();
-    }
-
-    // All this does is calls the UpdateStftTask at a fixed interval
-    // http://stackoverflow.com/questions/6531950/how-to-execute-async-task-repeatedly-after-fixed-time-intervals
-    public void initializeFreqTextBackgroundTask(int timeInMs) {
-        final Handler handler = new Handler();
-        Timer timer = new Timer();
-        TimerTask doAsynchronousTask = new TimerTask() {
-            @Override
-            public void run() {
-                handler.post(new Runnable() {
-                    public void run() {
-                        try {
-                            UpdateFreqTextTask performFreqTextUpdate = new UpdateFreqTextTask();
-                            performFreqTextUpdate.execute();
-                        } catch (Exception e) {
-                            // TODO Auto-generated catch block
-                        }
-                    }
-                });
-            }
-        };
-        timer.schedule(doAsynchronousTask, 0, timeInMs); // execute every 100 ms
-    }
-
-
     private void initializeMediaPlayer() {
         try {
             mediaPlayer = MediaPlayer.create(this, R.raw.audio_file);
@@ -1638,26 +1419,6 @@ public class MainActivity extends Activity
         }
     }
 
-    // UI update
-    private class UpdateFreqTextTask extends AsyncTask<Void, Float, Void> {
-        @Override
-        protected Void doInBackground(Void... params) {
-
-            // Update screen, needs to be done on UI thread
-            publishProgress(getFreqUpdate());
-
-            return null;
-        }
-
-        protected void onProgressUpdate(Float... newFreq) {
-            if (newFreq[0] > 0) {
-                freq_view.setText(Long.toString(newFreq[0].longValue()) + " Hz");
-            } else {
-                freq_view.setText("Unvoiced");
-            }
-        }
-    }
-
     /*
      * Loading our Libs
      */
@@ -1666,22 +1427,8 @@ public class MainActivity extends Activity
     }
 
     /*
-     * jni function implementations...
+     * REPET native FFT functions
      */
-    public static native void createSLEngine(int rate, int framesPerBuf);
-    public static native void deleteSLEngine();
-
-    public static native boolean createSLBufferQueueAudioPlayer();
-    public static native void deleteSLBufferQueueAudioPlayer();
-
-    public static native boolean createAudioRecorder();
-    public static native void deleteAudioRecorder();
-    public static native void startPlay();
-    public static native void stopPlay();
-
-    public static native float getFreqUpdate();
-
-    // REPET native FFT functions
     public static native void computeFFT(float[] input, float[] magnitude, float[] phase, int size);
     public static native void computeIFFT(float[] magnitude, float[] phase, float[] output, int size);
 }

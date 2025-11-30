@@ -246,13 +246,15 @@ for (int i = 0; i < numSamples; i++) {
 To prevent OutOfMemoryError (added after crash):
 
 ```java
-// Limit to 30 seconds at 48kHz = 1,440,000 samples
-final int maxSamples = 1440000;
+// Limit to ~156 seconds at 48kHz = 7,500,000 samples (with largeHeap enabled)
+final int maxSamples = 7500000;
 if (numSamples > maxSamples) {
-    statusView.setText("Audio too long. Max 30 seconds. Truncating...");
+    statusView.setText("Audio too long. Max 156 seconds. Truncating...");
     numSamples = maxSamples;
 }
 ```
+
+**Note**: `largeHeap="true"` is enabled in AndroidManifest.xml to allow processing longer audio files.
 
 ---
 
@@ -466,28 +468,29 @@ if (sampleRate == -1 || headerSize == -1) {
 
 ### Heap Limit
 Android apps have a heap limit (typically 256-512 MB). For this app:
-- **Heap limit**: ~384 MB (402653184 bytes)
+- **largeHeap enabled**: Provides 384-768 MB (device-dependent)
+- **Target limit**: ~390 MB peak for 156-second audio
 - **REPET arrays**: Can use significant memory for long audio
 
 ### Memory Usage Calculation
-For a 30-second audio file at 48kHz:
+For a 156-second (~2.6 minute) audio file at 48kHz:
 ```
-Samples: 30s × 48000 Hz = 1,440,000 samples
+Samples: 156s × 48000 Hz = 7,488,000 samples (~7.5 million)
 
 STFT arrays:
-- numFrames = (1,440,000 - 2048) / 512 + 1 = 2,809 frames
+- numFrames = (7,488,000 - 2048) / 512 + 1 = 14,621 frames
 - numBins = 2048 / 2 + 1 = 1,025 bins
-- magnitude[2809][1025] = 2,809 × 1,025 × 4 bytes = 11.5 MB
-- phase[2809][1025] = 11.5 MB
-- backgroundMask[2809][1025] = 11.5 MB
-- foregroundMask[2809][1025] = 11.5 MB
-- vocalFloat[1,440,000] = 1,440,000 × 4 = 5.5 MB
-- instrumentalFloat[1,440,000] = 5.5 MB
+- magnitude[14621][1025] = 14,621 × 1,025 × 4 bytes = 59.9 MB
+- phase[14621][1025] = 59.9 MB
+- backgroundMask[14621][1025] = 59.9 MB
+- foregroundMask[14621][1025] = 59.9 MB
+- vocalFloat[7,488,000] = 7,488,000 × 4 = 28.6 MB
+- instrumentalFloat[7,488,000] = 28.6 MB
 
-Total: ~57 MB for 30 seconds
+Total: ~297 MB for 156 seconds
 ```
 
-For 60+ second files, memory usage exceeds available heap → **OutOfMemoryError**
+With temporary allocations and overhead, peak usage is ~390 MB, fitting comfortably within largeHeap limits on most devices. Files longer than 156 seconds will be truncated to prevent **OutOfMemoryError**.
 
 ---
 
@@ -536,7 +539,7 @@ runOnUiThread(new Runnable() {
 
 ## 13. Known Limitations
 
-1. **File Size**: Max 30 seconds (to prevent OutOfMemoryError)
+1. **File Size**: Max 156 seconds (~2.6 minutes) with largeHeap enabled (to prevent OutOfMemoryError)
 2. **Format Support**: Only uncompressed 16-bit PCM WAV files
 3. **Channels**: Only mono audio supported
 4. **Sample Rate**: Must be 8kHz - 192kHz
