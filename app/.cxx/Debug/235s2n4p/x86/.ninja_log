@@ -1,0 +1,10 @@
+# ninja log v5
+8	89	7862520316718363	CMakeFiles/echo.dir/kiss_fft/kiss_fft.c.o	ab3a17e6eb6058cb
+0	451	7862520320306554	CMakeFiles/echo.dir/audio_player.cpp.o	2e3fb95aa180a256
+12	456	7862520320306554	CMakeFiles/echo.dir/debug_utils.cpp.o	ffac11797929df2a
+28	457	7862520320346693	CMakeFiles/echo.dir/audio_common.cpp.o	1e10b13ce93c8d32
+4	524	7862520321038152	CMakeFiles/echo.dir/audio_recorder.cpp.o	1ec349deecce6333
+16	525	7862520321038152	CMakeFiles/echo.dir/ece420_lib.cpp.o	c26b435837c4fde4
+20	531	7862520321124300	CMakeFiles/echo.dir/ece420_main.cpp.o	ad526d9f377444bd
+24	552	7862520321314882	CMakeFiles/echo.dir/audio_main.cpp.o	4177623f3b00f1e2
+552	625	7862520322061929	C:/Users/jay92/Documents/420 final/ECE420_Final_Project/app/build/intermediates/cxx/Debug/235s2n4p/obj/x86/libecho.so	d79bfb7a28cfb9ee

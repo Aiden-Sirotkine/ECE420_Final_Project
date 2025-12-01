@@ -6,15 +6,8 @@ android {
 
     defaultConfig {
         applicationId 'com.ece420.lab4'
-        /*
-           To run on earlier version of Android than android-21, do:
-             *) set this minSDKVersion and cmake's ANDROID_PLATFORM to your version
-             *) set ANDROID_STL to c++_static for some very earlier version android.
-         */
         minSdk 28
-        targetSdk 29    // Android 10
-//        targetSdk 33    //Android 13
-//        targetSdk 34    //Android 14
+        targetSdk 29
         versionCode 1
         versionName '1.0'
         externalNativeBuild {
@@ -26,8 +19,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'),
-                          'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
     externalNativeBuild {
@@ -35,13 +27,16 @@ android {
             path 'src/main/cpp/CMakeLists.txt'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.vectordrawable:vectordrawable:1.0.1'
-
-    implementation 'androidx.core:core-ktx:1.1.0' // for Android 10
-//    implementation 'androidx.core:core-ktx:1.10.0-alpha01' // for Android 13
-//    implementation 'androidx.core:core-ktx:1.12.0-beta01' // for Android 14}
+    implementation 'androidx.core:core-ktx:1.1.0'
 }

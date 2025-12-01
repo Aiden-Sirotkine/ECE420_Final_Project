@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#8B5CF6</color> <!-- Purple -->
+    <color name="colorPrimaryDark">#7C3AED</color>
+    <color name="colorAccent">#2DD4BF</color> <!-- Cyan/Teal -->
+    <color name="colorBackground">#111111</color>
+    <color name="colorSurface">#1F1F1F</color>
+    <color name="colorSurfaceLight">#2A2A2A</color>
+    <color name="colorTextPrimary">#FFFFFF</color>
+    <color name="colorTextSecondary">#AAAAAA</color>
+    <color name="colorDivider">#333333</color>
+</resources>

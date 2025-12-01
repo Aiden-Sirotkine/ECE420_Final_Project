@@ -1,104 +1,335 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:context="com.ece420.lab4.MainActivity">
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    tools:context="com.ece420.lab4.MainActivity">
 
-    <Button
-        android:id="@+id/load_file_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Load Audio File"
-        android:onClick="loadFileClick"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="16dp"/>
+    <!-- Top Bar -->
+    <ImageView
+        android:id="@+id/btn_menu"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:src="@android:drawable/ic_menu_sort_by_size"
+        app:tint="@color/colorTextPrimary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/resample_button"
+    <TextView
+        android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Speed Up"
-        android:onClick="resampleClick"
-        android:layout_below="@id/load_file_button"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp" />
+        android:text="RemixLab"
+        android:textColor="@color/colorTextPrimary"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/btn_menu"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btn_menu" />
 
-    <Button
-        android:id="@+id/crop_button"
+    <TextView
+        android:id="@+id/tv_import_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/resample_button"
-        android:layout_alignParentEnd="false"
-        android:layout_centerVertical="true"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="24dp"
-        android:onClick="REPETVocalClick"
-        android:text="Crop" />
+        android:layout_marginEnd="8dp"
+        android:text="import file"
+        android:textColor="@color/colorTextPrimary"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@id/btn_download"
+        app:layout_constraintEnd_toStartOf="@id/btn_download"
+        app:layout_constraintTop_toTopOf="@id/btn_download" />
 
-    <Button
-        android:id="@+id/mix_button"
+    <ImageView
+        android:id="@+id/btn_download"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="16dp"
+        android:src="@android:drawable/stat_sys_download"
+        app:tint="@color/colorTextPrimary"
+        app:layout_constraintBottom_toBottomOf="@id/btn_menu"
+        app:layout_constraintEnd_toStartOf="@id/btn_more"
+        app:layout_constraintTop_toTopOf="@id/btn_menu" />
+
+    <ImageView
+        android:id="@+id/btn_more"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="16dp"
+        android:src="@android:drawable/ic_menu_more"
+        app:tint="@color/colorTextPrimary"
+        app:layout_constraintBottom_toBottomOf="@id/btn_menu"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btn_menu" />
+
+    <!-- Waveform Area (Placeholder) -->
+    <!-- Spectrum Visualizer -->
+    <com.ece420.lab4.SpectrumVisualizerView
+        android:id="@+id/spectrum_visualizer"
+        android:layout_width="0dp"
+        android:layout_height="150dp"
+        android:layout_marginTop="32dp"
+        android:background="#222222"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_title" />
+
+    <TextView
+        android:id="@+id/tv_switch_mode_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/crop_button"
-        android:layout_alignParentEnd="false"
-        android:layout_centerVertical="true"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="24dp"
-        android:onClick="REPETVocalClick"
-        android:text="Mix" />
+        android:layout_marginEnd="8dp"
+        android:text="switch mode"
+        android:textColor="@color/colorTextPrimary"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@id/btn_visualizer_toggle"
+        app:layout_constraintEnd_toStartOf="@id/btn_visualizer_toggle"
+        app:layout_constraintTop_toTopOf="@id/btn_visualizer_toggle" />
 
-    <Button
-        android:id="@+id/repet"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:layout_marginEnd="12dp"
-        android:onClick="REPETClick"
-        android:text="repet" />
+    <ImageView
+        android:id="@+id/btn_visualizer_toggle"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_margin="8dp"
+        android:src="@android:drawable/ic_menu_slideshow"
+        app:tint="@color/colorTextPrimary"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintTop_toTopOf="@id/spectrum_visualizer"
+        app:layout_constraintEnd_toEndOf="@id/spectrum_visualizer" />
 
-    <Button
-        android:id="@+id/repet_vocal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/repet"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="24dp"
-        android:onClick="REPETVocalClick"
-        android:text="repet vocal" />
-
-    <Button
-        android:id="@+id/repet_instrumental_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/repet_vocal"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="24dp"
-        android:onClick="REPETInstrumentalClick"
-        android:text="repet instrumental" />
-
-    <Button
-        android:id="@+id/pitch_up_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/repet_instrumental_button"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="12dp"
-        android:layout_marginTop="24dp"
-        android:onClick="pitchUpClick"
-        android:text="pitch up" />
-
-    <TextView android:text="@string/init_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:lines="3"
+    <TextView
         android:id="@+id/statusView"
-        android:layout_centerHorizontal="true"
-        android:layout_alignParentBottom="true"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/init_status"
+        android:textColor="@color/colorTextSecondary"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/spectrum_visualizer" />
 
-</RelativeLayout>
+    <!-- Control Panel -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/control_panel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_rounded_card"
+        android:padding="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/statusView">
+
+        <!-- Tabs -->
+        <LinearLayout
+            android:id="@+id/tabs_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#2A2A2A"
+            android:orientation="horizontal"
+            android:padding="4dp"
+            android:weightSum="3"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tab_separation"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_tab_selected"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="Separation"
+                android:textColor="@color/colorTextPrimary"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tab_tune"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="Tune &amp; Tempo"
+                android:textColor="@color/colorTextSecondary" />
+
+            <TextView
+                android:id="@+id/tab_mixing"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="Mixing"
+                android:textColor="@color/colorTextSecondary" />
+        </LinearLayout>
+
+        <!-- Content: Separation (Default) -->
+        <Button
+            android:id="@+id/repet"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="48dp"
+            android:background="@drawable/bg_gradient_button"
+            android:onClick="REPETClick"
+            android:text="START SEPARATION"
+            android:textColor="@color/colorTextPrimary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/tabs_container" />
+
+        <!-- Vocal/Instrumental Toggle (Hidden initially) -->
+        <LinearLayout
+            android:id="@+id/vocal_instrumental_container"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="48dp"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/tabs_container">
+
+            <Button
+                android:id="@+id/btn_vocal"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/colorSurfaceLight"
+                android:text="Vocal"
+                android:textColor="@color/colorTextPrimary" />
+
+            <Button
+                android:id="@+id/btn_instrumental"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/colorSurfaceLight"
+                android:text="Instrumental"
+                android:textColor="@color/colorTextPrimary" />
+        </LinearLayout>
+            
+        <!-- Hidden Buttons for other tabs (will be toggled in Java) -->
+        <LinearLayout
+            android:id="@+id/tune_controls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/tabs_container"
+            android:layout_marginTop="24dp">
+            
+            <Button
+                android:id="@+id/resample_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Speed Up"
+                android:onClick="resampleClick"
+                android:backgroundTint="@color/colorSurfaceLight"/>
+                
+            <Button
+                android:id="@+id/pitch_up_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pitch Up"
+                android:onClick="pitchUpClick"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/colorSurfaceLight"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/mixing_controls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/tabs_container"
+            android:layout_marginTop="24dp">
+            
+            <Button
+                android:id="@+id/mix_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Mix"
+                android:onClick="mixClick"
+                android:backgroundTint="@color/colorSurfaceLight"/>
+                
+             <Button
+                android:id="@+id/crop_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Crop"
+                android:onClick="cropClick"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/colorSurfaceLight"/>
+        </LinearLayout>
+        
+        <!-- Extra REPET buttons (hidden or mapped) -->
+        <!-- Keeping them in layout but hidden to avoid crashes if Java references them, 
+             or I will update Java to not crash. 
+             Actually, I'll put them in a hidden view stub or just GONE. -->
+        <Button
+            android:id="@+id/repet_vocal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="repet vocal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="parent"/>
+            
+        <Button
+            android:id="@+id/repet_instrumental_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="repet instrumental"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="parent"/>
+            
+        <Button
+            android:id="@+id/load_file_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="Load"
+            android:onClick="loadFileClick"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="parent"/>
+
+
+        <!-- Playback Controls -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:layout_marginBottom="32dp"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_media_previous"
+                app:tint="@color/colorTextPrimary" />
+
+            <ImageView
+                android:id="@+id/btn_play_pause"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginHorizontal="32dp"
+                android:src="@drawable/ic_play_circle" />
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_media_next"
+                app:tint="@color/colorTextPrimary" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

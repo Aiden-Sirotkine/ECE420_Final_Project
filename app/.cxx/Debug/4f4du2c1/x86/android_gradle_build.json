@@ -1,20 +1,20 @@
 {
   "buildFiles": [
-    "/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/src/main/cpp/CMakeLists.txt",
-    "/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/src/main/cpp/ndk-stl-config.cmake"
+    "C:\\Users\\jay92\\Documents\\420 final\\ECE420_Final_Project\\app\\src\\main\\cpp\\CMakeLists.txt",
+    "C:\\Users\\jay92\\Documents\\420 final\\ECE420_Final_Project\\app\\src\\main\\cpp\\ndk-stl-config.cmake"
   ],
   "cleanCommandsComponents": [
     [
-      "/Users/jaychiang/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "C:\\Users\\jay92\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
       "-C",
-      "/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/.cxx/Debug/4f4du2c1/x86",
+      "C:\\Users\\jay92\\Documents\\420 final\\ECE420_Final_Project\\app\\.cxx\\Debug\\4f4du2c1\\x86",
       "clean"
     ]
   ],
   "buildTargetsCommandComponents": [
-    "/Users/jaychiang/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "C:\\Users\\jay92\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
     "-C",
-    "/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/.cxx/Debug/4f4du2c1/x86",
+    "C:\\Users\\jay92\\Documents\\420 final\\ECE420_Final_Project\\app\\.cxx\\Debug\\4f4du2c1\\x86",
     "{LIST_OF_TARGETS_TO_BUILD}"
   ],
   "libraries": {
@@ -22,14 +22,14 @@
       "toolchain": "toolchain",
       "abi": "x86",
       "artifactName": "echo",
-      "output": "/Users/jaychiang/Documents/Embedded DSP Labs/ECE420_Final_Project/app/build/intermediates/cxx/Debug/4f4du2c1/obj/x86/libecho.so",
+      "output": "C:\\Users\\jay92\\Documents\\420 final\\ECE420_Final_Project\\app\\build\\intermediates\\cxx\\Debug\\4f4du2c1\\obj\\x86\\libecho.so",
       "runtimeFiles": []
     }
   },
   "toolchains": {
     "toolchain": {
-      "cCompilerExecutable": "/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang.lld",
-      "cppCompilerExecutable": "/Users/jaychiang/Library/Android/sdk/ndk/26.1.10909125/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++.lld"
+      "cCompilerExecutable": "C:\\Users\\jay92\\AppData\\Local\\Android\\Sdk\\ndk\\26.1.10909125\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe",
+      "cppCompilerExecutable": "C:\\Users\\jay92\\AppData\\Local\\Android\\Sdk\\ndk\\26.1.10909125\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
     }
   },
   "cFileExtensions": [
