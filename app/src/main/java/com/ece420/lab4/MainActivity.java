@@ -84,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
     // New Toggle Buttons
     LinearLayout vocalInstrumentalContainer;
     Button btnVocal, btnInstrumental;
+    Button btnOriginalTrack;
     
     private MediaPlayer mediaPlayer;
     public static native boolean createSpeedAudioPlayer(String filePath, float speed);
@@ -162,11 +163,38 @@ public class MainActivity extends AppCompatActivity {
         vocalInstrumentalContainer = (LinearLayout) findViewById(R.id.vocal_instrumental_container);
         btnVocal = (Button) findViewById(R.id.btn_vocal);
         btnInstrumental = (Button) findViewById(R.id.btn_instrumental);
+        btnOriginalTrack = (Button) findViewById(R.id.btn_original_track);
+        
+        btnOriginalTrack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Play original audio
+                float progress = getCurrentProgress();
+                boolean wasPlaying = isAudioPlaying();
+
+                currentAudioState = AudioState.ORIGINAL;
+                stopAllAudio();
+                
+                if (mediaPlayer != null) {
+                    mediaPlayer.start();
+                    if (wasPlaying) {
+                        mediaPlayer.seekTo((int)(progress * mediaPlayer.getDuration()));
+                    }
+                    startProgressUpdater();
+                    setupVisualizer(mediaPlayer.getAudioSessionId());
+                    btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
+                }
+                
+                updateToggleUI();
+            }
+        });
+
         
         setupToggleButtons();
 
         // Initialize MediaPlayer
-        initializeMediaPlayer();
+        // Initialize MediaPlayer
+        updateMediaPlayer();
         
         resampleButton = (Button) findViewById(R.id.resample_button);
         resampleButton.setOnClickListener(new View.OnClickListener() {
@@ -232,7 +260,10 @@ public class MainActivity extends AppCompatActivity {
                 
                 switch (currentAudioState) {
                     case ORIGINAL:
-                        if (mediaPlayer != null) mediaPlayer.start();
+                        if (mediaPlayer != null) {
+                            mediaPlayer.start();
+                            startProgressUpdater();
+                        }
                         break;
                     case VOCAL:
                         if (vocalSamples != null) playAudio(vocalSamples, repetSampleRate);
@@ -319,6 +350,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Audio file loaded: " + fileName, Toast.LENGTH_SHORT).show();
                 
                 loadWaveformAsync();
+                updateMediaPlayer();
             }
         }
     }
@@ -432,6 +464,7 @@ public class MainActivity extends AppCompatActivity {
                  currentAudioTrack.stop();
                  currentAudioTrack.setPlaybackHeadPosition(frame);
                  currentAudioTrack.play();
+                 startProgressUpdater();
                  btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
              }
         }
@@ -451,6 +484,8 @@ public class MainActivity extends AppCompatActivity {
         
         // Hide all controls
         repetButton.setVisibility(View.GONE);
+        vocalInstrumentalContainer.setVisibility(View.GONE);
+        btnOriginalTrack.setVisibility(View.GONE);
         mTuneControls.setVisibility(View.GONE);
         mMixingControls.setVisibility(View.GONE);
         
@@ -458,7 +493,14 @@ public class MainActivity extends AppCompatActivity {
         if (selectedId == R.id.tab_separation) {
             tabSeparation.setBackgroundResource(R.drawable.bg_tab_selected);
             tabSeparation.setTextColor(getResources().getColor(R.color.colorTextPrimary));
-            repetButton.setVisibility(View.VISIBLE);
+            
+            // Check if separation is already done
+            if (vocalSamples != null) {
+                vocalInstrumentalContainer.setVisibility(View.VISIBLE);
+            } else {
+                repetButton.setVisibility(View.VISIBLE);
+            }
+            btnOriginalTrack.setVisibility(View.VISIBLE);
         } else if (selectedId == R.id.tab_tune) {
             tabTune.setBackgroundResource(R.drawable.bg_tab_selected);
             tabTune.setTextColor(getResources().getColor(R.color.colorTextPrimary));
@@ -474,36 +516,145 @@ public class MainActivity extends AppCompatActivity {
         btnVocal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                float progress = getCurrentProgress();
+                boolean wasPlaying = isAudioPlaying();
+                
                 currentAudioState = AudioState.VOCAL;
                 updateToggleUI();
-                stopAllAudio();
+                
+                if (wasPlaying && vocalSamples != null) {
+                    playAudio(vocalSamples, repetSampleRate, progress);
+                } else {
+                    stopAllAudio();
+                }
             }
         });
 
         btnInstrumental.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                float progress = getCurrentProgress();
+                boolean wasPlaying = isAudioPlaying();
+
                 currentAudioState = AudioState.INSTRUMENTAL;
                 updateToggleUI();
-                stopAllAudio();
+                
+                if (wasPlaying && instrumentalSamples != null) {
+                    playAudio(instrumentalSamples, repetSampleRate, progress);
+                } else {
+                    stopAllAudio();
+                }
             }
         });
     }
 
-    private void updateToggleUI() {
-        // Reset styles
-        btnVocal.setBackgroundTintList(getResources().getColorStateList(R.color.colorSurfaceLight));
-        btnInstrumental.setBackgroundTintList(getResources().getColorStateList(R.color.colorSurfaceLight));
-        
-        // Highlight selected
-        if (currentAudioState == AudioState.VOCAL) {
-            btnVocal.setBackgroundTintList(getResources().getColorStateList(R.color.colorPrimary));
-        } else if (currentAudioState == AudioState.INSTRUMENTAL) {
-            btnInstrumental.setBackgroundTintList(getResources().getColorStateList(R.color.colorPrimary));
+    private boolean isAudioPlaying() {
+        if (currentAudioState == AudioState.ORIGINAL) {
+            return mediaPlayer != null && mediaPlayer.isPlaying();
+        } else {
+            return currentAudioTrack != null && currentAudioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING;
         }
     }
 
+    private float getCurrentProgress() {
+        if (currentAudioState == AudioState.ORIGINAL) {
+            if (mediaPlayer != null && mediaPlayer.getDuration() > 0) {
+                return (float) mediaPlayer.getCurrentPosition() / mediaPlayer.getDuration();
+            }
+        } else {
+            if (currentAudioTrack != null) {
+                int totalFrames = 0;
+                if (currentAudioState == AudioState.VOCAL && vocalSamples != null) totalFrames = vocalSamples.length;
+                else if (currentAudioState == AudioState.INSTRUMENTAL && instrumentalSamples != null) totalFrames = instrumentalSamples.length;
+                else if (currentAudioState == AudioState.SPEED && speedSamples != null) totalFrames = speedSamples.length;
+                else if (currentAudioState == AudioState.PITCH && wsolaSamples != null) totalFrames = wsolaSamples.length;
+                else if (currentAudioState == AudioState.MIX && mixedSamples != null) totalFrames = mixedSamples.length;
+                else if (currentAudioState == AudioState.CROP && croppedSamples != null) totalFrames = croppedSamples.length;
+
+                if (totalFrames > 0) {
+                    long headPos = currentAudioTrack.getPlaybackHeadPosition() & 0xFFFFFFFFL;
+                    return (float) headPos / totalFrames;
+                }
+            }
+        }
+        return 0f;
+    }
+
+    private void updateToggleUI() {
+        // Reset styles
+        btnVocal.setSelected(false);
+        btnInstrumental.setSelected(false);
+        btnOriginalTrack.setSelected(false);
+        
+        // Highlight selected
+        if (currentAudioState == AudioState.VOCAL) {
+            btnVocal.setSelected(true);
+        } else if (currentAudioState == AudioState.INSTRUMENTAL) {
+            btnInstrumental.setSelected(true);
+        } else if (currentAudioState == AudioState.ORIGINAL) {
+            btnOriginalTrack.setSelected(true);
+        }
+    }
+
+    private android.os.Handler mHandler = new android.os.Handler();
+    private Runnable mUpdateProgressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            float progress = 0f;
+            boolean isPlaying = false;
+            
+            // Debug logging
+            // android.util.Log.d("ProgressUpdater", "State: " + currentAudioState + ", PlayState: " + (currentAudioTrack != null ? currentAudioTrack.getPlayState() : "null"));
+
+            if (currentAudioState == AudioState.ORIGINAL) {
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                    int duration = mediaPlayer.getDuration();
+                    if (duration > 0) {
+                        progress = (float) mediaPlayer.getCurrentPosition() / duration;
+                    }
+                    isPlaying = true;
+                }
+            } else {
+                if (currentAudioTrack != null && currentAudioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
+                    int totalFrames = 0;
+                    if (currentAudioState == AudioState.VOCAL && vocalSamples != null) totalFrames = vocalSamples.length;
+                    else if (currentAudioState == AudioState.INSTRUMENTAL && instrumentalSamples != null) totalFrames = instrumentalSamples.length;
+                    else if (currentAudioState == AudioState.SPEED && speedSamples != null) totalFrames = speedSamples.length;
+                    else if (currentAudioState == AudioState.PITCH && wsolaSamples != null) totalFrames = wsolaSamples.length;
+                    else if (currentAudioState == AudioState.MIX && mixedSamples != null) totalFrames = mixedSamples.length;
+                    else if (currentAudioState == AudioState.CROP && croppedSamples != null) totalFrames = croppedSamples.length;
+
+                    if (totalFrames > 0) {
+                        long headPos = currentAudioTrack.getPlaybackHeadPosition() & 0xFFFFFFFFL;
+                        progress = (float) headPos / totalFrames;
+                    }
+                    isPlaying = true;
+                }
+            }
+
+            if (spectrumVisualizer != null) {
+                spectrumVisualizer.setProgress(progress);
+            }
+
+            if (isPlaying) {
+                mHandler.postDelayed(this, 50);
+            }
+        }
+    };
+
+    private void startProgressUpdater() {
+        stopProgressUpdater();
+        // Use post() to ensure AudioTrack has time to update its state to PLAYING
+        // This fixes the race condition where run() was called too early
+        mHandler.post(mUpdateProgressRunnable);
+    }
+
+    private void stopProgressUpdater() {
+        mHandler.removeCallbacks(mUpdateProgressRunnable);
+    }
+
     private void stopAllAudio() {
+        stopProgressUpdater();
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             btnPlayPause.setImageResource(R.drawable.ic_play_circle);
@@ -541,6 +692,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void playAudio(short[] samples, int sampleRate) {
+        playAudio(samples, sampleRate, 0f);
+    }
+
+    private void playAudio(short[] samples, int sampleRate, float startProgress) {
         stopAllAudio();
         try {
             currentAudioTrack = new AudioTrack(
@@ -556,8 +711,15 @@ public class MainActivity extends AppCompatActivity {
                 outBuffer.putShort(s);
             }
             currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
-            currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
+            
+            // Set start position if needed
+            if (startProgress > 0f) {
+                int startFrame = (int) (samples.length * startProgress);
+                currentAudioTrack.setPlaybackHeadPosition(startFrame);
+            }
+            
             currentAudioTrack.play();
+            startProgressUpdater();
             
             setupVisualizer(currentAudioTrack.getAudioSessionId());
             if (spectrumVisualizer != null) {
@@ -777,8 +939,16 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     // Load WAV file from user-selected file or fallback to raw resources
                     InputStream inputStream = loadAudioFromSource();
-                    byte[] wavData = new byte[inputStream.available()];
-                    inputStream.read(wavData);
+                    
+                    // Read entire stream into byte array (robust against available() returning 0)
+                    java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                    int nRead;
+                    byte[] data = new byte[16384]; // 16KB chunk
+                    while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                        buffer.write(data, 0, nRead);
+                    }
+                    buffer.flush();
+                    byte[] wavData = buffer.toByteArray();
                     inputStream.close();
 
                     // Parse WAV header and extract PCM data
@@ -1279,16 +1449,37 @@ public class MainActivity extends AppCompatActivity {
                 return new int[]{-1, -1}; // Error code
             }
 
-            // Standard WAV: assume fmt chunk at position 12
+            // Scan chunks dynamically
             ByteBuffer bb = ByteBuffer.wrap(wavData).order(ByteOrder.LITTLE_ENDIAN);
+            int pos = 12; // Start after RIFF + Size + WAVE
+            int sampleRate = -1;
+            int headerSize = -1;
 
-            // Check if "fmt " is at expected position
-            String fmtCheck = new String(wavData, 12, 4, "ASCII");
-            if (fmtCheck.equals("fmt ")) {
-                // Standard format - sample rate at byte 24
-                bb.position(24);
-                int sampleRate = bb.getInt();
+            while (pos < wavData.length - 8) {
+                String chunkId = new String(wavData, pos, 4, "ASCII");
+                int chunkSize = bb.getInt(pos + 4);
+                
+                if (chunkSize < 0) break; // Invalid size
 
+                if (chunkId.equals("fmt ")) {
+                    // Found format chunk
+                    // Format is: AudioFormat(2) + NumChannels(2) + SampleRate(4) ...
+                    // So SampleRate is at offset 4 from chunk data start
+                    if (chunkSize >= 16) {
+                        sampleRate = bb.getInt(pos + 8 + 4);
+                    }
+                } else if (chunkId.equals("data")) {
+                    // Found data chunk
+                    headerSize = pos + 8;
+                    break; // Stop scanning, we found the data
+                }
+
+                pos += 8 + chunkSize;
+                // WAV chunks are word-aligned
+                if (chunkSize % 2 != 0) pos++;
+            }
+
+            if (sampleRate != -1 && headerSize != -1) {
                 // Validate sample rate is reasonable (8kHz to 192kHz)
                 if (sampleRate >= 8000 && sampleRate <= 192000) {
                     final int finalRate = sampleRate;
@@ -1298,7 +1489,7 @@ public class MainActivity extends AppCompatActivity {
                             statusView.setText("Loaded WAV: " + finalRate + " Hz");
                         }
                     });
-                    return new int[]{sampleRate, 44};
+                    return new int[]{sampleRate, headerSize};
                 } else {
                     final String msg = "Invalid sample rate: " + sampleRate + " Hz";
                     runOnUiThread(new Runnable() {
@@ -1307,19 +1498,18 @@ public class MainActivity extends AppCompatActivity {
                             Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
                         }
                     });
+                     return new int[]{-1, -1};
                 }
             } else {
-                final String msg = "Non-standard WAV format. Expected 'fmt ' at byte 12, got: '" + fmtCheck + "'";
+                final String msg = "Could not find 'fmt ' or 'data' chunk.";
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
                     }
                 });
+                return new int[]{-1, -1};
             }
-
-            // Fallback to default
-            return new int[]{defaultSampleRate, defaultHeaderSize};
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -1362,6 +1552,7 @@ public class MainActivity extends AppCompatActivity {
 
             currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
             currentAudioTrack.play();
+            startProgressUpdater();
             statusView.setText("Playing vocal track at " + repetSampleRate + " Hz...");
         } catch (Exception e) {
             statusView.setText("Vocal playback error: " + e.getMessage());
@@ -1401,6 +1592,7 @@ public class MainActivity extends AppCompatActivity {
 
             currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
             currentAudioTrack.play();
+            startProgressUpdater();
             statusView.setText("Playing instrumental track at " + repetSampleRate + " Hz...");
         } catch (Exception e) {
             statusView.setText("Instrumental playback error: " + e.getMessage());
@@ -1636,23 +1828,36 @@ public class MainActivity extends AppCompatActivity {
 
 //    -------------------------------------------------------------
 
-    private void initializeMediaPlayer() {
+    private void updateMediaPlayer() {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
         try {
-            mediaPlayer = MediaPlayer.create(this, R.raw.audio_file);
-            mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-                @Override
-                public boolean onError(MediaPlayer mp, int what, int extra) {
-                    statusView.setText("Audio playback error");
-                    return false;
-                }
-            });
+            if (selectedAudioUri != null) {
+                mediaPlayer = MediaPlayer.create(this, selectedAudioUri);
+            } else {
+                mediaPlayer = MediaPlayer.create(this, R.raw.audio_file);
+            }
+
+            if (mediaPlayer != null) {
+                mediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                    @Override
+                    public boolean onError(MediaPlayer mp, int what, int extra) {
+                        statusView.setText("Audio playback error");
+                        return false;
+                    }
+                });
+                setupVisualizer(mediaPlayer.getAudioSessionId());
+            }
         } catch (Exception e) {
             statusView.setText("Failed to initialize audio player");
+            e.printStackTrace();
         }
         
         if (mediaPlayer != null) {
-            setupVisualizer(mediaPlayer.getAudioSessionId());
-            loadWaveformAsync();
+            // setupVisualizer is already called above
+            // loadWaveformAsync is called separately
         }
     }
 
