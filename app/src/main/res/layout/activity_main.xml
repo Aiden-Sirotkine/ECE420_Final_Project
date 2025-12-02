@@ -284,8 +284,21 @@
                 android:onClick="cropClick"
                 android:layout_marginTop="8dp"
                 android:backgroundTint="@color/colorSurfaceLight"/>
+
+            <SeekBar
+                android:id="@+id/crop_slider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="parent"
+                android:text="Crop Value"
+                android:layout_marginTop="8dp"
+                android:max="1000"
+                android:backgroundTint="@color/colorSurfaceLight"/>
+            />
+
         </LinearLayout>
-        
+
+
         <!-- Extra REPET buttons (hidden or mapped) -->
         <!-- Keeping them in layout but hidden to avoid crashes if Java references them, 
              or I will update Java to not crash. 

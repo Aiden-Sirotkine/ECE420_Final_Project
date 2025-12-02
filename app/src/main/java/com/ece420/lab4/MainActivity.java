@@ -32,6 +32,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -85,6 +86,8 @@ public class MainActivity extends AppCompatActivity {
     LinearLayout vocalInstrumentalContainer;
     Button btnVocal, btnInstrumental;
     Button btnOriginalTrack;
+
+    SeekBar cropSlider;
     
     private MediaPlayer mediaPlayer;
     public static native boolean createSpeedAudioPlayer(String filePath, float speed);
@@ -114,6 +117,8 @@ public class MainActivity extends AppCompatActivity {
     // Mix caching variables
     private short[] mixedSamples = null;
 
+    double crop_percent = 0.6;
+
 //    --------------------------------------------
 
     @Override
@@ -138,6 +143,8 @@ public class MainActivity extends AppCompatActivity {
         
         spectrumVisualizer = (SpectrumVisualizerView) findViewById(R.id.spectrum_visualizer);
         btnVisualizerToggle = (ImageView) findViewById(R.id.btn_visualizer_toggle);
+
+        cropSlider = findViewById(R.id.crop_slider);
         
         btnVisualizerToggle.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -303,6 +310,48 @@ public class MainActivity extends AppCompatActivity {
                 loadFileClick(v);
             }
         });
+
+
+        // Add OnSeekBarChangeListener
+        cropSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                // This is called when the slider is moved
+                crop_percent = (double) progress / 10.0; // Convert int to double
+                String cropButtonTitle = "Crop (" + crop_percent + " %)";
+                crop_percent /= 100;
+                crop_percent = 1 - crop_percent;
+
+                cropButton.setText(cropButtonTitle);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                // Called when user starts touching the slider
+                // You can optionally do something here
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // Called when user stops touching the slider
+                // Useful if you only want to update after user releases
+            }
+        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
     @Override
     protected void onDestroy() {
@@ -816,12 +865,12 @@ public class MainActivity extends AppCompatActivity {
     
     public void cropClick(View view) {
         // Check if Crop result is already cached
-        if (croppedSamples != null) {
-            statusView.setText("Playing cached Crop result...");
-            currentAudioState = AudioState.CROP;
-            stopAllAudio();
-            return;
-        }
+//        if (croppedSamples != null) {
+//            statusView.setText("Playing cached Crop result...");
+//            currentAudioState = AudioState.CROP;
+//            stopAllAudio();
+//            return;
+//        }
         
         // ... (Processing logic) ...
         statusView.setText("Processing Crop...");
@@ -853,7 +902,7 @@ public class MainActivity extends AppCompatActivity {
                 originalSamples[i] = pcmBuffer.getShort();
             }
 
-            double crop_percent = 0.6;
+//            double crop_percent = 0.6;
             short[] resampledSamples = new short[(int) (numSamples * crop_percent)];
             for (int i = 0; i < resampledSamples.length; i+=1) {
                 resampledSamples[i] = originalSamples[(int) (numSamples * (1-crop_percent)) + i];
@@ -870,7 +919,7 @@ public class MainActivity extends AppCompatActivity {
             // If I change it, I might break it. Let's keep it consistent if I can.
             // Actually, let's just set the state.
             
-            croppedSampleRate = sampleRate; // Correcting potential bug or just safe default
+            croppedSampleRate = sampleRate*2; // Correcting potential bug or just safe default
             
             currentAudioState = AudioState.CROP;
             stopAllAudio();
