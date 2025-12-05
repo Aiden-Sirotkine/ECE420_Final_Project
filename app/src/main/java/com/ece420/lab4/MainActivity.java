@@ -997,12 +997,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Check if Mix result is already cached
-        if (mixedSamples != null) {
-            statusView.setText("Playing cached Mix result...");
-            currentAudioState = AudioState.MIX;
-            stopAllAudio();
-            return;
-        }
+//        if (mixedSamples != null) {
+//            statusView.setText("Playing cached Mix result...");
+//            currentAudioState = AudioState.MIX;
+//            stopAllAudio();
+//            playAudio(mixedSamples, vocalSampleRate);
+//            return;
+//        }
 
         statusView.setText("Processing Mix...");
         stopCurrentAudio();
@@ -1015,7 +1016,7 @@ public class MainActivity extends AppCompatActivity {
             // Mix the samples
             for (int i = 0; i < minLength; i++) {
                 // Convert to int to prevent overflow during addition
-                int mixed = instrumentalSamples[i] + vocalSamples[minLength - i - 1];
+                int mixed = instrumentalSamples[i] + vocalSamples[i];
 
                 // Prevent clipping - clamp to short range
                 if (mixed > Short.MAX_VALUE) {
@@ -1030,9 +1031,10 @@ public class MainActivity extends AppCompatActivity {
             // Store Mix result in cache
             mixedSamples = tempMixedSamples;
 
-            currentAudioState = AudioState.MIX;
+//            currentAudioState = AudioState.MIX;
             stopAllAudio();
-            statusView.setText("Mix complete. Press Play.");
+            playAudio(mixedSamples, vocalSampleRate);
+            statusView.setText("Mix complete.");
 
         } catch (Exception e) {
             statusView.setText("Mix error: " + e.getMessage());
