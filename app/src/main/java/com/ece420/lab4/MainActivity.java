@@ -57,10 +57,10 @@ public class MainActivity extends AppCompatActivity {
     ImageView btnPlayPause, btnDownload;
     SpectrumVisualizerView spectrumVisualizer;
     ImageView btnVisualizerToggle;
-    
+
     private Visualizer mVisualizer;
     private static final int PERMISSION_REQUEST_AUDIO = 2;
-    
+
     // Static Values
     private static final int FILE_PICKER_REQUEST = 1;
 
@@ -71,9 +71,10 @@ public class MainActivity extends AppCompatActivity {
     private enum AudioState {
         ORIGINAL, VOCAL, INSTRUMENTAL, SPEED, PITCH, MIX, CROP
     }
+
     private AudioState currentAudioState = AudioState.ORIGINAL;
 
-//    -------------------------------------------------------
+    //    -------------------------------------------------------
     Button resampleButton;
     Button repetButton;
     Button repetVocalButton;
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
     Button pitchUpButton;
     Button cropButton;
     Button mixButton;
-    
+
     // New Toggle Buttons
     LinearLayout vocalInstrumentalContainer;
     Button btnVocal, btnInstrumental;
@@ -90,31 +91,36 @@ public class MainActivity extends AppCompatActivity {
     SeekBar cropSlider;
     SeekBar resampleSlider;
     SeekBar pitchUpSlider;
-    
+
     private MediaPlayer mediaPlayer;
+
     public static native boolean createSpeedAudioPlayer(String filePath, float speed);
+
     public static native void playSpeedAudio();
+
     public static native void stopSpeedAudio();
+
     public static native void deleteSpeedAudioPlayer();
+
     private boolean isSpeedPlaying = false;
 
     // REPET variables to store separated audio
     private short[] vocalSamples = null;
     private short[] instrumentalSamples = null;
-    private int repetSampleRate = 44100; // Store the sample rate for playback
+//    private int repetSampleRate = 44100; // Store the sample rate for playback
     private AudioTrack currentAudioTrack = null; // Track currently playing audio
 
     // WSOLA caching variables
-    private short[] wsolaSamples = null;
-    private int wsolaSampleRate = 44100;
+//    private short[] wsolaSamples = null;
+//    private int wsolaSampleRate = 44100;
 
     // Speed resampling caching variables
-    private short[] speedSamples = null;
-    private int speedSampleRate = 44100;
+//    private short[] speedSamples = null;
+//    private int speedSampleRate = 44100;
 
     // Crop caching variables
-    private short[] croppedSamples = null;
-    private int croppedSampleRate = 44100;
+//    private short[] croppedSamples = null;
+//    private int croppedSampleRate = 44100;
 
     // Mix caching variables
     private short[] mixedSamples = null;
@@ -123,6 +129,14 @@ public class MainActivity extends AppCompatActivity {
     double resample_percent = 1;
     double pitch_up_percent = 1;
 
+//    oh my god this code is some of the dumbest shit I've ever has the misfortune of looking at.
+//    I hate AI coding with a passion I can't believe I have to debug this
+
+    private short[] originalSamples = null;
+    int originalSampleRate = 44100;
+    int vocalSampleRate = 44100;
+    int instrumentalSampleRate = 44100;
+
 //    --------------------------------------------
 
     @Override
@@ -130,11 +144,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
-        super.setRequestedOrientation (ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        super.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         // UI Elements
-        statusView = (TextView)findViewById(R.id.statusView);
-        
+        statusView = (TextView) findViewById(R.id.statusView);
+
         // New UI Elements
         tabSeparation = (TextView) findViewById(R.id.tab_separation);
         tabTune = (TextView) findViewById(R.id.tab_tune);
@@ -144,14 +158,14 @@ public class MainActivity extends AppCompatActivity {
         btnPlayPause = (ImageView) findViewById(R.id.btn_play_pause);
 
         btnDownload = (ImageView) findViewById(R.id.btn_download);
-        
+
         spectrumVisualizer = (SpectrumVisualizerView) findViewById(R.id.spectrum_visualizer);
         btnVisualizerToggle = (ImageView) findViewById(R.id.btn_visualizer_toggle);
 
         cropSlider = findViewById(R.id.crop_slider);
         resampleSlider = findViewById(R.id.resample_slider);
         pitchUpSlider = findViewById(R.id.pitch_up_slider);
-        
+
         btnVisualizerToggle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -163,21 +177,21 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-        
+
         spectrumVisualizer.setListener(new SpectrumVisualizerView.OnSeekListener() {
             @Override
             public void onSeek(float progress) {
                 seekToProgress(progress);
             }
         });
-        
+
         checkAudioPermission();
-        
+
         vocalInstrumentalContainer = (LinearLayout) findViewById(R.id.vocal_instrumental_container);
         btnVocal = (Button) findViewById(R.id.btn_vocal);
         btnInstrumental = (Button) findViewById(R.id.btn_instrumental);
         btnOriginalTrack = (Button) findViewById(R.id.btn_original_track);
-        
+
         btnOriginalTrack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -187,28 +201,28 @@ public class MainActivity extends AppCompatActivity {
 
                 currentAudioState = AudioState.ORIGINAL;
                 stopAllAudio();
-                
-                if (mediaPlayer != null) {
-                    mediaPlayer.start();
-                    if (wasPlaying) {
-                        mediaPlayer.seekTo((int)(progress * mediaPlayer.getDuration()));
-                    }
-                    startProgressUpdater();
-                    setupVisualizer(mediaPlayer.getAudioSessionId());
-                    btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
-                }
-                
+
+//                if (mediaPlayer != null) {
+//                    mediaPlayer.start();
+//                    if (wasPlaying) {
+//                        mediaPlayer.seekTo((int) (progress * mediaPlayer.getDuration()));
+//                    }
+//                    startProgressUpdater();
+//                    setupVisualizer(mediaPlayer.getAudioSessionId());
+//                    btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
+//                }
+
                 updateToggleUI();
             }
         });
 
-        
+
         setupToggleButtons();
 
         // Initialize MediaPlayer
         // Initialize MediaPlayer
         updateMediaPlayer();
-        
+
         resampleButton = (Button) findViewById(R.id.resample_button);
         resampleButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -244,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
                 mixClick(v);
             }
         });
-        
+
         // Tab Click Listeners
         View.OnClickListener tabListener = new View.OnClickListener() {
             @Override
@@ -252,63 +266,74 @@ public class MainActivity extends AppCompatActivity {
                 updateTabs(v.getId());
             }
         };
-        
+
         tabSeparation.setOnClickListener(tabListener);
         tabTune.setOnClickListener(tabListener);
         tabMixing.setOnClickListener(tabListener);
-        
+
         // Play Button Listener
         btnPlayPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // If something is playing, stop it
                 if ((mediaPlayer != null && mediaPlayer.isPlaying()) ||
-                    (currentAudioTrack != null && currentAudioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING)) {
+                        (currentAudioTrack != null && currentAudioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING)) {
                     stopAllAudio();
                     return;
                 }
 
                 // Otherwise, play based on state
                 btnPlayPause.setImageResource(R.drawable.ic_pause_circle); // Assume playing starts
-                
+
                 switch (currentAudioState) {
                     case ORIGINAL:
-                        if (mediaPlayer != null) {
-                            mediaPlayer.start();
-                            startProgressUpdater();
+                        if (originalSamples != null) {
+                            playAudio(originalSamples, originalSampleRate);
+                        } else {
+                            if (mediaPlayer != null) {
+                                mediaPlayer.start();
+                                startProgressUpdater();
+                            }
                         }
                         break;
                     case VOCAL:
-                        if (vocalSamples != null) playAudio(vocalSamples, repetSampleRate);
-                        else Toast.makeText(MainActivity.this, "No vocal track", Toast.LENGTH_SHORT).show();
+                        if (vocalSamples != null) playAudio(vocalSamples, vocalSampleRate);
+                        else
+                            Toast.makeText(MainActivity.this, "No vocal track", Toast.LENGTH_SHORT).show();
                         break;
                     case INSTRUMENTAL:
-                        if (instrumentalSamples != null) playAudio(instrumentalSamples, repetSampleRate);
-                        else Toast.makeText(MainActivity.this, "No instrumental track", Toast.LENGTH_SHORT).show();
+                        if (instrumentalSamples != null)
+                            playAudio(instrumentalSamples, instrumentalSampleRate);
+                        else
+                            Toast.makeText(MainActivity.this, "No instrumental track", Toast.LENGTH_SHORT).show();
                         break;
-                    case SPEED:
-                        if (speedSamples != null) {
-                            playAudio(speedSamples, speedSampleRate);
-                        } else {
-                             Toast.makeText(MainActivity.this, "No speed track", Toast.LENGTH_SHORT).show();
-                        }
-                        break;
-                    case PITCH:
-                         if (wsolaSamples != null) playAudio(wsolaSamples, wsolaSampleRate);
-                         else Toast.makeText(MainActivity.this, "No pitch track", Toast.LENGTH_SHORT).show();
-                        break;
+//                    case SPEED:
+//                        if (speedSamples != null) {
+//                            playAudio(speedSamples, speedSampleRate);
+//                        } else {
+//                            Toast.makeText(MainActivity.this, "No speed track", Toast.LENGTH_SHORT).show();
+//                        }
+//                        break;
+//                    case PITCH:
+//                        if (wsolaSamples != null) playAudio(wsolaSamples, wsolaSampleRate);
+//                        else
+//                            Toast.makeText(MainActivity.this, "No pitch track", Toast.LENGTH_SHORT).show();
+//                        break;
                     case MIX:
-                         if (mixedSamples != null) playAudio(mixedSamples, 44100); // Mix usually 44100
-                         else Toast.makeText(MainActivity.this, "No mix track", Toast.LENGTH_SHORT).show();
+                        if (mixedSamples != null)
+                            playAudio(mixedSamples, 44100); // Mix usually 44100
+                        else
+                            Toast.makeText(MainActivity.this, "No mix track", Toast.LENGTH_SHORT).show();
                         break;
-                    case CROP:
-                         if (croppedSamples != null) playAudio(croppedSamples, croppedSampleRate);
-                         else Toast.makeText(MainActivity.this, "No crop track", Toast.LENGTH_SHORT).show();
-                        break;
+//                    case CROP:
+//                        if (croppedSamples != null) playAudio(croppedSamples, croppedSampleRate);
+//                        else
+//                            Toast.makeText(MainActivity.this, "No crop track", Toast.LENGTH_SHORT).show();
+//                        break;
                 }
             }
         });
-        
+
         // Download/Load Button Listener
         btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -333,14 +358,10 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                // Called when user starts touching the slider
-                // You can optionally do something here
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                // Called when user stops touching the slider
-                // Useful if you only want to update after user releases
             }
         });
 
@@ -367,8 +388,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-
-
         // Add OnSeekBarChangeListener
         pitchUpSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -377,37 +396,22 @@ public class MainActivity extends AppCompatActivity {
                 pitch_up_percent = (double) (progress) / 5.0; // Convert int to double
                 String pitchUpButtonTitle = "Pitch Change (" + pitch_up_percent + " %)";
                 pitch_up_percent /= 100;
-//                pitch_up_percent = 1 - pitch_up_percent;
 
                 pitchUpButton.setText(pitchUpButtonTitle);
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                // Called when user starts touching the slider
-                // You can optionally do something here
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                // Called when user stops touching the slider
-                // Useful if you only want to update after user releases
             }
         });
 
 
-
-
-
-
-
-
-
-
-
-
-
     }
+
     @Override
     protected void onDestroy() {
         // Clean up REPET audio
@@ -427,7 +431,7 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        
+
         if (mVisualizer != null) {
             mVisualizer.release();
             mVisualizer = null;
@@ -452,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
                 statusView.setText("Loaded: " + fileName);
                 statusView.setText("Loaded: " + fileName);
                 Toast.makeText(this, "Audio file loaded: " + fileName, Toast.LENGTH_SHORT).show();
-                
+
                 loadWaveformAsync();
                 updateMediaPlayer();
             }
@@ -508,7 +512,7 @@ public class MainActivity extends AppCompatActivity {
             mVisualizer.release();
             mVisualizer = null;
         }
-        
+
         // Check permission again
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -522,7 +526,7 @@ public class MainActivity extends AppCompatActivity {
                     new Visualizer.OnDataCaptureListener() {
                         public void onWaveFormDataCapture(Visualizer visualizer,
                                                           byte[] bytes, int samplingRate) {
-                             // We use FFT for spectrum, but could use this for waveform mode if we wanted real-time wave
+                            // We use FFT for spectrum, but could use this for waveform mode if we wanted real-time wave
                         }
 
                         public void onFftDataCapture(Visualizer visualizer,
@@ -549,28 +553,34 @@ public class MainActivity extends AppCompatActivity {
         // If playing processed audio (AudioTrack), we can't easily seek with static mode unless we reload.
         // Static AudioTrack allows setPlaybackHeadPosition? Yes.
         else if (currentAudioTrack != null) {
-             // AudioTrack in static mode
-             // getBufferSizeInFrames() or something?
-             // We passed samples.length * 2 as buffer size.
-             // We need to know total frames.
-             // If we have the samples array, we know length.
-             
-             int totalFrames = 0;
-             if (currentAudioState == AudioState.VOCAL && vocalSamples != null) totalFrames = vocalSamples.length;
-             else if (currentAudioState == AudioState.INSTRUMENTAL && instrumentalSamples != null) totalFrames = instrumentalSamples.length;
-             else if (currentAudioState == AudioState.SPEED && speedSamples != null) totalFrames = speedSamples.length;
-             else if (currentAudioState == AudioState.PITCH && wsolaSamples != null) totalFrames = wsolaSamples.length;
-             else if (currentAudioState == AudioState.MIX && mixedSamples != null) totalFrames = mixedSamples.length;
-             else if (currentAudioState == AudioState.CROP && croppedSamples != null) totalFrames = croppedSamples.length;
-             
-             if (totalFrames > 0) {
-                 int frame = (int) (totalFrames * progress);
-                 currentAudioTrack.stop();
-                 currentAudioTrack.setPlaybackHeadPosition(frame);
-                 currentAudioTrack.play();
-                 startProgressUpdater();
-                 btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
-             }
+            // AudioTrack in static mode
+            // getBufferSizeInFrames() or something?
+            // We passed samples.length * 2 as buffer size.
+            // We need to know total frames.
+            // If we have the samples array, we know length.
+
+            int totalFrames = 0;
+            if (currentAudioState == AudioState.VOCAL && vocalSamples != null)
+                totalFrames = vocalSamples.length;
+            else if (currentAudioState == AudioState.INSTRUMENTAL && instrumentalSamples != null)
+                totalFrames = instrumentalSamples.length;
+//            else if (currentAudioState == AudioState.SPEED && speedSamples != null)
+//                totalFrames = speedSamples.length;
+//            else if (currentAudioState == AudioState.PITCH && wsolaSamples != null)
+//                totalFrames = wsolaSamples.length;
+            else if (currentAudioState == AudioState.MIX && mixedSamples != null)
+                totalFrames = mixedSamples.length;
+//            else if (currentAudioState == AudioState.CROP && croppedSamples != null)
+//                totalFrames = croppedSamples.length;
+
+            if (totalFrames > 0) {
+                int frame = (int) (totalFrames * progress);
+                currentAudioTrack.stop();
+                currentAudioTrack.setPlaybackHeadPosition(frame);
+                currentAudioTrack.play();
+                startProgressUpdater();
+                btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
+            }
         }
     }
 
@@ -581,23 +591,23 @@ public class MainActivity extends AppCompatActivity {
         tabSeparation.setBackgroundResource(0);
         tabTune.setBackgroundResource(0);
         tabMixing.setBackgroundResource(0);
-        
+
         tabSeparation.setTextColor(getResources().getColor(R.color.colorTextSecondary));
         tabTune.setTextColor(getResources().getColor(R.color.colorTextSecondary));
         tabMixing.setTextColor(getResources().getColor(R.color.colorTextSecondary));
-        
+
         // Hide all controls
         repetButton.setVisibility(View.GONE);
         vocalInstrumentalContainer.setVisibility(View.GONE);
         btnOriginalTrack.setVisibility(View.GONE);
         mTuneControls.setVisibility(View.GONE);
         mMixingControls.setVisibility(View.GONE);
-        
+
         // Update selected tab
         if (selectedId == R.id.tab_separation) {
             tabSeparation.setBackgroundResource(R.drawable.bg_tab_selected);
             tabSeparation.setTextColor(getResources().getColor(R.color.colorTextPrimary));
-            
+
             // Check if separation is already done
             if (vocalSamples != null) {
                 vocalInstrumentalContainer.setVisibility(View.VISIBLE);
@@ -622,15 +632,15 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 float progress = getCurrentProgress();
                 boolean wasPlaying = isAudioPlaying();
-                
+
                 currentAudioState = AudioState.VOCAL;
                 updateToggleUI();
-                
-                if (wasPlaying && vocalSamples != null) {
-                    playAudio(vocalSamples, repetSampleRate, progress);
-                } else {
-                    stopAllAudio();
-                }
+
+//                if (wasPlaying && vocalSamples != null) {
+//                    playAudio(vocalSamples, repetSampleRate, progress);
+//                } else {
+//                    stopAllAudio();
+//                }
             }
         });
 
@@ -642,12 +652,12 @@ public class MainActivity extends AppCompatActivity {
 
                 currentAudioState = AudioState.INSTRUMENTAL;
                 updateToggleUI();
-                
-                if (wasPlaying && instrumentalSamples != null) {
-                    playAudio(instrumentalSamples, repetSampleRate, progress);
-                } else {
-                    stopAllAudio();
-                }
+
+//                if (wasPlaying && instrumentalSamples != null) {
+//                    playAudio(instrumentalSamples, repetSampleRate, progress);
+//                } else {
+//                    stopAllAudio();
+//                }
             }
         });
     }
@@ -668,12 +678,18 @@ public class MainActivity extends AppCompatActivity {
         } else {
             if (currentAudioTrack != null) {
                 int totalFrames = 0;
-                if (currentAudioState == AudioState.VOCAL && vocalSamples != null) totalFrames = vocalSamples.length;
-                else if (currentAudioState == AudioState.INSTRUMENTAL && instrumentalSamples != null) totalFrames = instrumentalSamples.length;
-                else if (currentAudioState == AudioState.SPEED && speedSamples != null) totalFrames = speedSamples.length;
-                else if (currentAudioState == AudioState.PITCH && wsolaSamples != null) totalFrames = wsolaSamples.length;
-                else if (currentAudioState == AudioState.MIX && mixedSamples != null) totalFrames = mixedSamples.length;
-                else if (currentAudioState == AudioState.CROP && croppedSamples != null) totalFrames = croppedSamples.length;
+                if (currentAudioState == AudioState.VOCAL && vocalSamples != null)
+                    totalFrames = vocalSamples.length;
+                else if (currentAudioState == AudioState.INSTRUMENTAL && instrumentalSamples != null)
+                    totalFrames = instrumentalSamples.length;
+//                else if (currentAudioState == AudioState.SPEED && speedSamples != null)
+//                    totalFrames = speedSamples.length;
+//                else if (currentAudioState == AudioState.PITCH && wsolaSamples != null)
+//                    totalFrames = wsolaSamples.length;
+                else if (currentAudioState == AudioState.MIX && mixedSamples != null)
+                    totalFrames = mixedSamples.length;
+//                else if (currentAudioState == AudioState.CROP && croppedSamples != null)
+//                    totalFrames = croppedSamples.length;
 
                 if (totalFrames > 0) {
                     long headPos = currentAudioTrack.getPlaybackHeadPosition() & 0xFFFFFFFFL;
@@ -689,7 +705,7 @@ public class MainActivity extends AppCompatActivity {
         btnVocal.setSelected(false);
         btnInstrumental.setSelected(false);
         btnOriginalTrack.setSelected(false);
-        
+
         // Highlight selected
         if (currentAudioState == AudioState.VOCAL) {
             btnVocal.setSelected(true);
@@ -706,7 +722,7 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             float progress = 0f;
             boolean isPlaying = false;
-            
+
             // Debug logging
             // android.util.Log.d("ProgressUpdater", "State: " + currentAudioState + ", PlayState: " + (currentAudioTrack != null ? currentAudioTrack.getPlayState() : "null"));
 
@@ -721,12 +737,18 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 if (currentAudioTrack != null && currentAudioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
                     int totalFrames = 0;
-                    if (currentAudioState == AudioState.VOCAL && vocalSamples != null) totalFrames = vocalSamples.length;
-                    else if (currentAudioState == AudioState.INSTRUMENTAL && instrumentalSamples != null) totalFrames = instrumentalSamples.length;
-                    else if (currentAudioState == AudioState.SPEED && speedSamples != null) totalFrames = speedSamples.length;
-                    else if (currentAudioState == AudioState.PITCH && wsolaSamples != null) totalFrames = wsolaSamples.length;
-                    else if (currentAudioState == AudioState.MIX && mixedSamples != null) totalFrames = mixedSamples.length;
-                    else if (currentAudioState == AudioState.CROP && croppedSamples != null) totalFrames = croppedSamples.length;
+                    if (currentAudioState == AudioState.VOCAL && vocalSamples != null)
+                        totalFrames = vocalSamples.length;
+                    else if (currentAudioState == AudioState.INSTRUMENTAL && instrumentalSamples != null)
+                        totalFrames = instrumentalSamples.length;
+//                    else if (currentAudioState == AudioState.SPEED && speedSamples != null)
+//                        totalFrames = speedSamples.length;
+//                    else if (currentAudioState == AudioState.PITCH && wsolaSamples != null)
+//                        totalFrames = wsolaSamples.length;
+                    else if (currentAudioState == AudioState.MIX && mixedSamples != null)
+                        totalFrames = mixedSamples.length;
+//                    else if (currentAudioState == AudioState.CROP && croppedSamples != null)
+//                        totalFrames = croppedSamples.length;
 
                     if (totalFrames > 0) {
                         long headPos = currentAudioTrack.getPlaybackHeadPosition() & 0xFFFFFFFFL;
@@ -773,7 +795,7 @@ public class MainActivity extends AppCompatActivity {
             btnPlayPause.setImageResource(R.drawable.ic_play_circle);
         }
     }
-    
+
     private void resetSeparationUI() {
         runOnUiThread(new Runnable() {
             @Override
@@ -789,10 +811,10 @@ public class MainActivity extends AppCompatActivity {
     private void clearAllCaches() {
         vocalSamples = null;
         instrumentalSamples = null;
-        speedSamples = null;
-        wsolaSamples = null;
+//        speedSamples = null;
+//        wsolaSamples = null;
         mixedSamples = null;
-        croppedSamples = null;
+//        croppedSamples = null;
     }
 
     private void playAudio(short[] samples, int sampleRate) {
@@ -815,21 +837,21 @@ public class MainActivity extends AppCompatActivity {
                 outBuffer.putShort(s);
             }
             currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
-            
+
             // Set start position if needed
             if (startProgress > 0f) {
                 int startFrame = (int) (samples.length * startProgress);
                 currentAudioTrack.setPlaybackHeadPosition(startFrame);
             }
-            
+
             currentAudioTrack.play();
             startProgressUpdater();
-            
+
             setupVisualizer(currentAudioTrack.getAudioSessionId());
             if (spectrumVisualizer != null) {
                 spectrumVisualizer.setWaveformSamples(samples);
             }
-            
+
             btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
         } catch (Exception e) {
             statusView.setText("Playback error: " + e.getMessage());
@@ -863,48 +885,39 @@ public class MainActivity extends AppCompatActivity {
         try {
             // ... (Processing logic remains same) ...
             // 1. Load WAV file from user-selected file or fallback to raw resources
-            InputStream inputStream = loadAudioFromSource();
-            byte[] wavData = new byte[inputStream.available()];
-            inputStream.read(wavData);
-            inputStream.close();
 
-            // 2. Parse WAV header and extract PCM data
-            int[] headerInfo = parseWavHeader(wavData);
-            int sampleRate = headerInfo[0];
-            int headerSize = headerInfo[1];
 
-            // Check for parsing error
-            if (sampleRate == -1 || headerSize == -1) {
-                statusView.setText("Cannot process: Invalid audio format");
-                return;
-            }
+            short[] originalSamplesArr = loadInAudio(currentAudioState);
+            int numSamples = originalSamplesArr.length;
+            int sampleRate = originalSampleRate;
 
-            statusView.setText("Speed: Sample rate = " + sampleRate + " Hz");
-
-            int pcmDataSize = wavData.length - headerSize;
-            byte[] pcmData = new byte[pcmDataSize];
-            System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
-
-            // 3. Resample PCM data (e.g., 2x speed: skip every other sample)
-            ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
-            int numSamples = pcmDataSize / 2; // times 2
-            short[] originalSamples = new short[numSamples];
-            for (int i = 0; i < numSamples; i++) {
-                originalSamples[i] = pcmBuffer.getShort();
+            if (currentAudioState == AudioState.VOCAL) {
+                sampleRate = vocalSampleRate;
+            } else if (currentAudioState == AudioState.INSTRUMENTAL) {
+                sampleRate = instrumentalSampleRate;
             }
             // Simple 2x speed: take every other sample
             double rate = resample_percent;
-            rate *= 2;
+
             short[] resampledSamples = new short[(int) (numSamples / rate)];
-            for (int i = 0; i < resampledSamples.length; i+=1) {
-                resampledSamples[i] = originalSamples[(int) (i* rate)];
+            for (int i = 0; i < resampledSamples.length; i += 1) {
+                resampledSamples[i] = originalSamplesArr[(int) (i * rate)];
             }
 
             // Store Speed result in cache
-            speedSamples = resampledSamples;
-            speedSampleRate = sampleRate;
-            
-            currentAudioState = AudioState.SPEED;
+//            speedSamples = resampledSamples;
+
+//            currentAudioState = AudioState.SPEED;
+
+            if (currentAudioState == AudioState.ORIGINAL) {
+                originalSamples = resampledSamples;
+            } else if (currentAudioState == AudioState.INSTRUMENTAL) {
+                instrumentalSamples = resampledSamples;
+            } else if (currentAudioState == AudioState.VOCAL) {
+                vocalSamples = resampledSamples;
+            }
+
+
             stopAllAudio();
             statusView.setText("Speed processing complete. Press Play.");
 
@@ -912,12 +925,12 @@ public class MainActivity extends AppCompatActivity {
             statusView.setText("Resample error: " + e.getMessage());
         }
     }
-    
+
     // Need to update WSOLAClick (Pitch), cropClick, mixClick similarly
     // Since I can't see WSOLAClick in the previous view, I will assume it's there or I need to find it.
     // Wait, I saw WSOLAClick in the file content earlier? 
     // Ah, I missed viewing the WSOLAClick implementation. I should find it.
-    
+
     public void cropClick(View view) {
         // Check if Crop result is already cached
 //        if (croppedSamples != null) {
@@ -926,46 +939,30 @@ public class MainActivity extends AppCompatActivity {
 //            stopAllAudio();
 //            return;
 //        }
-        
+
         // ... (Processing logic) ...
         statusView.setText("Processing Crop...");
         try {
-             // 1. Load WAV file from user-selected file or fallback to raw resources
-            InputStream inputStream = loadAudioFromSource();
-            byte[] wavData = new byte[inputStream.available()];
-            inputStream.read(wavData);
-            inputStream.close();
+            // 1. Load WAV file from user-selected file or fallback to raw resources
+            short[] originalSamplesArr = loadInAudio(currentAudioState);
+            int numSamples = originalSamplesArr.length;
+            int sampleRate = originalSampleRate;
 
-            // 2. Parse WAV header and extract PCM data
-            int[] headerInfo = parseWavHeader(wavData);
-            int sampleRate = headerInfo[0];
-            int headerSize = headerInfo[1];
-
-            if (sampleRate == -1 || headerSize == -1) {
-                statusView.setText("Cannot process: Invalid audio format");
-                return;
-            }
-
-            int pcmDataSize = wavData.length - headerSize;
-            byte[] pcmData = new byte[pcmDataSize];
-            System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
-
-            ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
-            int numSamples = pcmDataSize / 2;
-            short[] originalSamples = new short[numSamples];
-            for (int i = 0; i < numSamples; i++) {
-                originalSamples[i] = pcmBuffer.getShort();
+            if (currentAudioState == AudioState.VOCAL) {
+                sampleRate = vocalSampleRate;
+            } else if (currentAudioState == AudioState.INSTRUMENTAL) {
+                sampleRate = instrumentalSampleRate;
             }
 
 //            double crop_percent = 0.6;
             short[] resampledSamples = new short[(int) (numSamples * crop_percent)];
-            for (int i = 0; i < resampledSamples.length; i+=1) {
-                resampledSamples[i] = originalSamples[(int) (numSamples * (1-crop_percent)) + i];
+            for (int i = 0; i < resampledSamples.length; i += 1) {
+                resampledSamples[i] = originalSamplesArr[(int) (numSamples * (1 - crop_percent)) + i];
             }
 
             // Store Crop result in cache
-            croppedSamples = resampledSamples;
-            croppedSampleRate = sampleRate; // Was sampleRate * 2 in original code? Let's check. 
+//            croppedSamples = resampledSamples;
+//            croppedSampleRate = sampleRate; // Was sampleRate * 2 in original code? Let's check.
             // Original code had: croppedSampleRate = sampleRate * 2; and sampleRate *= 2; 
             // But logic was just array copy. Why *2? Maybe mono/stereo confusion or just wrong?
             // I'll stick to sampleRate for now unless I see reason otherwise.
@@ -973,10 +970,18 @@ public class MainActivity extends AppCompatActivity {
             // AudioTrack audioTrack = new AudioTrack(..., sampleRate, ...);
             // If I change it, I might break it. Let's keep it consistent if I can.
             // Actually, let's just set the state.
-            
-            croppedSampleRate = sampleRate*2; // Correcting potential bug or just safe default
-            
-            currentAudioState = AudioState.CROP;
+
+//            croppedSampleRate = sampleRate * 2; // Correcting potential bug or just safe default
+
+            if (currentAudioState == AudioState.ORIGINAL) {
+                originalSamples = resampledSamples;
+            } else if (currentAudioState == AudioState.INSTRUMENTAL) {
+                instrumentalSamples = resampledSamples;
+            } else if (currentAudioState == AudioState.VOCAL) {
+                vocalSamples = resampledSamples;
+            }
+
+//            currentAudioState = AudioState.CROP;
             stopAllAudio();
             statusView.setText("Crop complete. Press Play.");
 
@@ -985,7 +990,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void mixClick(View view){
+    public void mixClick(View view) {
         if (instrumentalSamples == null) {
             statusView.setText("Please run REPET first!");
             return;
@@ -1024,15 +1029,16 @@ public class MainActivity extends AppCompatActivity {
 
             // Store Mix result in cache
             mixedSamples = tempMixedSamples;
-            
+
             currentAudioState = AudioState.MIX;
             stopAllAudio();
             statusView.setText("Mix complete. Press Play.");
-            
+
         } catch (Exception e) {
             statusView.setText("Mix error: " + e.getMessage());
         }
     }
+
     public void REPETClick(View view) {
         statusView.setText("Processing REPET...");
 
@@ -1043,7 +1049,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     // Load WAV file from user-selected file or fallback to raw resources
                     InputStream inputStream = loadAudioFromSource();
-                    
+
                     // Read entire stream into byte array (robust against available() returning 0)
                     java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
                     int nRead;
@@ -1447,7 +1453,9 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     // Store the sample rate for playback (maintain original rate since we resampled)
-                    repetSampleRate = actualSampleRate;
+//                    repetSampleRate = actualSampleRate;
+                    vocalSampleRate = actualSampleRate;
+                    instrumentalSampleRate = actualSampleRate;
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -1456,7 +1464,7 @@ public class MainActivity extends AppCompatActivity {
                             statusView.setText("REPET separation complete!");
                             repetButton.setVisibility(View.GONE);
                             vocalInstrumentalContainer.setVisibility(View.VISIBLE);
-                            
+
                             // Default to Vocal
                             currentAudioState = AudioState.VOCAL;
                             updateToggleUI();
@@ -1491,6 +1499,56 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private short[] loadInAudio(AudioState current) throws Exception {
+        if (current == AudioState.ORIGINAL) {
+            if (originalSamples == null) {
+                InputStream inputStream = loadAudioFromSource();
+                byte[] wavData = new byte[inputStream.available()];
+                inputStream.read(wavData);
+                inputStream.close();
+
+                // 2. Parse WAV header and extract PCM data
+                int[] headerInfo = parseWavHeader(wavData);
+                int sampleRate = headerInfo[0];
+                int headerSize = headerInfo[1];
+
+                // Check for parsing error
+                if (sampleRate == -1 || headerSize == -1) {
+                    statusView.setText("Cannot process: Invalid audio format");
+                }
+
+                statusView.setText("Speed: Sample rate = " + sampleRate + " Hz");
+
+                int pcmDataSize = wavData.length - headerSize;
+                byte[] pcmData = new byte[pcmDataSize];
+                System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
+
+                // 3. Resample PCM data (e.g., 2x speed: skip every other sample)
+                ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
+                int numSamples = pcmDataSize / 2; // times 2
+                short[] originalSamplesArr = new short[numSamples];
+                for (int i = 0; i < numSamples; i++) {
+                    originalSamplesArr[i] = pcmBuffer.getShort();
+                }
+
+                originalSamples = originalSamplesArr;
+//                repetSampleRate = sampleRate;
+                originalSampleRate = sampleRate;
+                instrumentalSampleRate = sampleRate;
+                vocalSampleRate = sampleRate;
+            } else {
+                return originalSamples;
+            }
+        } else if (current == AudioState.VOCAL) {
+            return vocalSamples;
+        } else if (current == AudioState.INSTRUMENTAL) {
+            return instrumentalSamples;
+        }
+
+        statusView.setText("Audio State not original, instrumental, or vocal");
+        return originalSamples;
+    }
 
 
     private InputStream loadAudioFromSource() throws Exception {
@@ -1641,7 +1699,7 @@ public class MainActivity extends AppCompatActivity {
             // Play vocal (foreground) PCM data using AudioTrack with correct sample rate
             currentAudioTrack = new AudioTrack(
                     AudioManager.STREAM_MUSIC,
-                    repetSampleRate,
+                    vocalSampleRate,
                     AudioFormat.CHANNEL_OUT_MONO,
                     AudioFormat.ENCODING_PCM_16BIT,
                     vocalSamples.length * 2,
@@ -1657,7 +1715,7 @@ public class MainActivity extends AppCompatActivity {
             currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
             currentAudioTrack.play();
             startProgressUpdater();
-            statusView.setText("Playing vocal track at " + repetSampleRate + " Hz...");
+            statusView.setText("Playing vocal track at " + vocalSampleRate + " Hz...");
         } catch (Exception e) {
             statusView.setText("Vocal playback error: " + e.getMessage());
         }
@@ -1671,7 +1729,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Debug info
-        String debugInfo = "Instrumental: " + instrumentalSamples.length + " samples, " + repetSampleRate + " Hz";
+        String debugInfo = "Instrumental: " + instrumentalSamples.length + " samples, " + vocalSampleRate + " Hz";
         Toast.makeText(this, debugInfo, Toast.LENGTH_SHORT).show();
 
         // Stop any currently playing audio
@@ -1681,7 +1739,7 @@ public class MainActivity extends AppCompatActivity {
             // Play instrumental (background) PCM data using AudioTrack with correct sample rate
             currentAudioTrack = new AudioTrack(
                     AudioManager.STREAM_MUSIC,
-                    repetSampleRate,
+                    vocalSampleRate,
                     AudioFormat.CHANNEL_OUT_MONO,
                     AudioFormat.ENCODING_PCM_16BIT,
                     instrumentalSamples.length * 2,
@@ -1697,7 +1755,7 @@ public class MainActivity extends AppCompatActivity {
             currentAudioTrack.write(outBuffer.array(), 0, outBuffer.array().length);
             currentAudioTrack.play();
             startProgressUpdater();
-            statusView.setText("Playing instrumental track at " + repetSampleRate + " Hz...");
+            statusView.setText("Playing instrumental track at " + vocalSampleRate + " Hz...");
         } catch (Exception e) {
             statusView.setText("Instrumental playback error: " + e.getMessage());
             Toast.makeText(this, "Playback error: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -1728,49 +1786,28 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 try {
                     // 1. Load WAV file from user-selected file or fallback to raw resources
-                    InputStream inputStream = loadAudioFromSource();
-                    byte[] wavData = new byte[inputStream.available()];
-                    inputStream.read(wavData);
-                    inputStream.close();
+                    short[] originalSamplesArr = loadInAudio(currentAudioState);
+                    int numSamples = originalSamplesArr.length;
+                    int sampleRate = originalSampleRate;
 
-                    // 2. Parse WAV header and extract PCM data
-                    int[] headerInfo = parseWavHeader(wavData);
-                    final int sampleRate = headerInfo[0];
-                    int headerSize = headerInfo[1];
-
-                    // Check for parsing error
-                    if (sampleRate == -1 || headerSize == -1) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                statusView.setText("Cannot process: Invalid audio format");
-                            }
-                        });
-                        return;
+                    if (currentAudioState == AudioState.VOCAL) {
+                        sampleRate = vocalSampleRate;
+                    } else if (currentAudioState == AudioState.INSTRUMENTAL) {
+                        sampleRate = instrumentalSampleRate;
                     }
+
+                    final int sampleRateTitle = sampleRate;
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            statusView.setText("WSOLA: Sample rate = " + sampleRate + " Hz");
+                            statusView.setText("WSOLA: Sample rate = " + sampleRateTitle + " Hz");
                         }
                     });
 
-                    int pcmDataSize = wavData.length - headerSize;
-                    byte[] pcmData = new byte[pcmDataSize];
-                    System.arraycopy(wavData, headerSize, pcmData, 0, pcmDataSize);
-
-                    // 3. Convert to short array
-                    ByteBuffer pcmBuffer = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN);
-                    int numSamples = pcmDataSize / 2;
-                    short[] originalSamples = new short[numSamples];
-                    for (int i = 0; i < numSamples; i++) {
-                        originalSamples[i] = pcmBuffer.getShort();
-                    }
-
                     // 4. WSOLA pitch shift up by 100% (one octave)
                     double pitch_shift = pitch_up_percent;
-                    double rate = pitch_shift*2;
+                    double rate = pitch_shift;
 
                     runOnUiThread(new Runnable() {
                         @Override
@@ -1809,7 +1846,7 @@ public class MainActivity extends AppCompatActivity {
 
                             double corr = 0;
                             for (int j = 0; j < frameSize; j++) {
-                                corr += originalSamples[refStart + j] * originalSamples[cmpStart + j];
+                                corr += originalSamplesArr[refStart + j] * originalSamplesArr[cmpStart + j];
                             }
                             if (corr > coarseMaxCorr) {
                                 coarseMaxCorr = corr;
@@ -1831,7 +1868,7 @@ public class MainActivity extends AppCompatActivity {
 
                             double corr = 0;
                             for (int j = 0; j < frameSize; j++) {
-                                corr += originalSamples[refStart + j] * originalSamples[cmpStart + j];
+                                corr += originalSamplesArr[refStart + j] * originalSamplesArr[cmpStart + j];
                             }
                             if (corr > maxCorr) {
                                 maxCorr = corr;
@@ -1845,8 +1882,8 @@ public class MainActivity extends AppCompatActivity {
                         // OPTIMIZATION 5: Overlap-add using float arithmetic (no clamping needed)
                         for (int j = 0; j < frameSize; j++) {
                             int outIdx = outPos + j;
-                            if (outIdx < outputSamples.length && bestStart + j < originalSamples.length) {
-                                outputSamples[outIdx] += originalSamples[bestStart + j];
+                            if (outIdx < outputSamples.length && bestStart + j < originalSamplesArr.length) {
+                                outputSamples[outIdx] += originalSamplesArr[bestStart + j];
                             }
                         }
                         outPos += synthesisHop;
@@ -1896,12 +1933,19 @@ public class MainActivity extends AppCompatActivity {
                     });
 
                     // Store WSOLA result in cache
-                    wsolaSamples = resampledSamples;
-                    wsolaSampleRate = sampleRate;
+//                    wsolaSamples = resampledSamples;
+
+                    if (currentAudioState == AudioState.ORIGINAL) {
+                        originalSamples = resampledSamples;
+                    } else if (currentAudioState == AudioState.INSTRUMENTAL) {
+                        instrumentalSamples = resampledSamples;
+                    } else if (currentAudioState == AudioState.VOCAL) {
+                        vocalSamples = resampledSamples;
+                    }
 
 
                     // 5. Update state
-                    currentAudioState = AudioState.PITCH;
+//                    currentAudioState = AudioState.PITCH;
                     stopAllAudio();
                     
                     runOnUiThread(new Runnable() {
