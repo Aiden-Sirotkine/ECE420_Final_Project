@@ -245,18 +245,42 @@
                 android:id="@+id/resample_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Speed Up"
+                android:text="Speed Value (100%)"
                 android:onClick="resampleClick"
                 android:backgroundTint="@color/colorSurfaceLight"/>
+
+            <SeekBar
+                android:id="@+id/resample_slider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="parent"
+                android:text="Speed Value (100%)"
+                android:layout_marginTop="8dp"
+                android:max="1000"
+                android:progress="500"
+                android:backgroundTint="@color/colorSurfaceLight"/>
+            />
                 
             <Button
                 android:id="@+id/pitch_up_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Pitch Up"
+                android:text="Pitch Change (100%)"
                 android:onClick="pitchUpClick"
                 android:layout_marginTop="8dp"
                 android:backgroundTint="@color/colorSurfaceLight"/>
+
+            <SeekBar
+                android:id="@+id/pitch_up_slider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="parent"
+                android:text="Pitch Value"
+                android:layout_marginTop="8dp"
+                android:max="1000"
+                android:progress="500"
+                android:backgroundTint="@color/colorSurfaceLight"/>
+            />
         </LinearLayout>
 
         <LinearLayout
@@ -280,7 +304,7 @@
                 android:id="@+id/crop_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Crop"
+                android:text="Crop (0%)"
                 android:onClick="cropClick"
                 android:layout_marginTop="8dp"
                 android:backgroundTint="@color/colorSurfaceLight"/>

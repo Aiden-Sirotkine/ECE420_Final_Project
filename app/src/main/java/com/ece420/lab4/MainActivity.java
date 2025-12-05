@@ -88,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
     Button btnOriginalTrack;
 
     SeekBar cropSlider;
+    SeekBar resampleSlider;
+    SeekBar pitchUpSlider;
     
     private MediaPlayer mediaPlayer;
     public static native boolean createSpeedAudioPlayer(String filePath, float speed);
@@ -117,7 +119,9 @@ public class MainActivity extends AppCompatActivity {
     // Mix caching variables
     private short[] mixedSamples = null;
 
-    double crop_percent = 0.6;
+    double crop_percent = 1;
+    double resample_percent = 1;
+    double pitch_up_percent = 1;
 
 //    --------------------------------------------
 
@@ -145,6 +149,8 @@ public class MainActivity extends AppCompatActivity {
         btnVisualizerToggle = (ImageView) findViewById(R.id.btn_visualizer_toggle);
 
         cropSlider = findViewById(R.id.crop_slider);
+        resampleSlider = findViewById(R.id.resample_slider);
+        pitchUpSlider = findViewById(R.id.pitch_up_slider);
         
         btnVisualizerToggle.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -339,6 +345,55 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+        resampleSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                // This is called when the slider is moved
+                resample_percent = (double) progress / 5.0; // Convert int to double
+                String resampleButtonTitle = "Speed Up (" + resample_percent + " %)";
+                resample_percent /= 100;
+//                resample_percent = 1 - resample_percent;
+
+                resampleButton.setText(resampleButtonTitle);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
+
+
+
+        // Add OnSeekBarChangeListener
+        pitchUpSlider.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                // This is called when the slider is moved
+                pitch_up_percent = (double) (progress) / 5.0; // Convert int to double
+                String pitchUpButtonTitle = "Pitch Change (" + pitch_up_percent + " %)";
+                pitch_up_percent /= 100;
+//                pitch_up_percent = 1 - pitch_up_percent;
+
+                pitchUpButton.setText(pitchUpButtonTitle);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                // Called when user starts touching the slider
+                // You can optionally do something here
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // Called when user stops touching the slider
+                // Useful if you only want to update after user releases
+            }
+        });
 
 
 
@@ -795,14 +850,14 @@ public class MainActivity extends AppCompatActivity {
 
     public void onSpeedUpClick(View view) {
         // Check if Speed result is already cached
-        if (speedSamples != null) {
-            statusView.setText("Playing cached Speed result...");
-            currentAudioState = AudioState.SPEED;
-            stopAllAudio();
-            // Optional: Auto-play?
-            // playAudio(speedSamples, speedSampleRate);
-            return;
-        }
+//        if (speedSamples != null) {
+//            statusView.setText("Playing cached Speed result...");
+//            currentAudioState = AudioState.SPEED;
+//            stopAllAudio();
+//            // Optional: Auto-play?
+//            // playAudio(speedSamples, speedSampleRate);
+//            return;
+//        }
 
         statusView.setText("Processing Speed resampling...");
         try {
@@ -838,7 +893,7 @@ public class MainActivity extends AppCompatActivity {
                 originalSamples[i] = pcmBuffer.getShort();
             }
             // Simple 2x speed: take every other sample
-            double rate = 1.2;
+            double rate = resample_percent;
             rate *= 2;
             short[] resampledSamples = new short[(int) (numSamples / rate)];
             for (int i = 0; i < resampledSamples.length; i+=1) {
@@ -1658,12 +1713,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void WSOLAClick(View view) {
         // Check if WSOLA result is already cached
-        if (wsolaSamples != null) {
-            statusView.setText("Playing cached WSOLA result...");
-            currentAudioState = AudioState.PITCH;
-            stopAllAudio();
-            return;
-        }
+//        if (wsolaSamples != null) {
+//            statusView.setText("Playing cached WSOLA result...");
+//            currentAudioState = AudioState.PITCH;
+//            stopAllAudio();
+//            return;
+//        }
 
         statusView.setText("Processing WSOLA pitch shift...");
 
@@ -1714,7 +1769,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     // 4. WSOLA pitch shift up by 100% (one octave)
-                    double pitch_shift = 1.5;
+                    double pitch_shift = pitch_up_percent;
                     double rate = pitch_shift*2;
 
                     runOnUiThread(new Runnable() {
@@ -1843,8 +1898,6 @@ public class MainActivity extends AppCompatActivity {
                     // Store WSOLA result in cache
                     wsolaSamples = resampledSamples;
                     wsolaSampleRate = sampleRate;
-
-
 
 
                     // 5. Update state
