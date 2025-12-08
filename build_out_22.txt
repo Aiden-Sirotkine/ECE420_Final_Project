@@ -1,0 +1,237 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by net.rubygrapefruit.platform.internal.NativeLibraryLoader in an unnamed module (file:/C:/Users/jay92/.gradle/wrapper/dists/gradle-8.13-bin/34ap19oldls385r5fs6rspcrap/gradle-8.13/lib/native-platform-0.22-milestone-28.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:parseDebugLocalResources
+
+> Task :app:processDebugMainManifest
+package="com.ece420.lab4" found in source AndroidManifest.xml: C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.ece420.lab4" from the source AndroidManifest.xml: C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\AndroidManifest.xml.
+
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+
+> Task :app:compileDebugJavaWithJavac FAILED
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:219: error: cannot find symbol
+        cropSlider = findViewById(R.id.crop_slider);
+        ^
+  symbol:   variable cropSlider
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:219: error: cannot find symbol
+        cropSlider = findViewById(R.id.crop_slider);
+                                      ^
+  symbol:   variable crop_slider
+  location: class id
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:220: error: cannot find symbol
+        resampleSlider = findViewById(R.id.resample_slider);
+        ^
+  symbol:   variable resampleSlider
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:220: error: cannot find symbol
+        resampleSlider = findViewById(R.id.resample_slider);
+                                          ^
+  symbol:   variable resample_slider
+  location: class id
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:221: error: cannot find symbol
+        pitchUpSlider = findViewById(R.id.pitch_up_slider);
+        ^
+  symbol:   variable pitchUpSlider
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:221: error: cannot find symbol
+        pitchUpSlider = findViewById(R.id.pitch_up_slider);
+                                         ^
+  symbol:   variable pitch_up_slider
+  location: class id
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:282: error: cannot find symbol
+        resampleButton = (Button) findViewById(R.id.resample_button);
+        ^
+  symbol:   variable resampleButton
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:282: error: cannot find symbol
+        resampleButton = (Button) findViewById(R.id.resample_button);
+                                                   ^
+  symbol:   variable resample_button
+  location: class id
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:283: error: cannot find symbol
+        resampleButton.setOnClickListener(new View.OnClickListener() {
+        ^
+  symbol:   variable resampleButton
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:293: error: cannot find symbol
+        pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
+        ^
+  symbol:   variable pitchUpButton
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:293: error: cannot find symbol
+        pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
+                                                  ^
+  symbol:   variable pitch_up_button
+  location: class id
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:294: error: cannot find symbol
+        cropButton = (Button) findViewById(R.id.crop_button);
+        ^
+  symbol:   variable cropButton
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:294: error: cannot find symbol
+        cropButton = (Button) findViewById(R.id.crop_button);
+                                               ^
+  symbol:   variable crop_button
+  location: class id
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:297: error: cannot find symbol
+        pitchUpButton.setOnClickListener(new View.OnClickListener() {
+        ^
+  symbol:   variable pitchUpButton
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:304: error: cannot find symbol
+        cropButton.setOnClickListener(new View.OnClickListener() {
+        ^
+  symbol:   variable cropButton
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:1062: error: cannot find symbol
+        cropButton.setText(cropTitle);
+        ^
+  symbol:   variable cropButton
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:1066: error: cannot find symbol
+        resampleButton.setText(speedTitle);
+        ^
+  symbol:   variable resampleButton
+  location: class MainActivity
+C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:1070: error: cannot find symbol
+        pitchUpButton.setText(pitchTitle);
+        ^
+  symbol:   variable pitchUpButton
+  location: class MainActivity
+Note: C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+18 errors
+
+[Incubating] Problems report is available at: file:///C:/Users/jay92/Documents/420%20final/ECE420_Final_Project/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugJavaWithJavac'.
+> Compilation failed; see the compiler output below.
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:219: error: cannot find symbol
+          cropSlider = findViewById(R.id.crop_slider);
+          ^
+    symbol:   variable cropSlider
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:219: error: cannot find symbol
+          cropSlider = findViewById(R.id.crop_slider);
+                                        ^
+    symbol:   variable crop_slider
+    location: class id
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:220: error: cannot find symbol
+          resampleSlider = findViewById(R.id.resample_slider);
+          ^
+    symbol:   variable resampleSlider
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:220: error: cannot find symbol
+          resampleSlider = findViewById(R.id.resample_slider);
+                                            ^
+    symbol:   variable resample_slider
+    location: class id
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:221: error: cannot find symbol
+          pitchUpSlider = findViewById(R.id.pitch_up_slider);
+          ^
+    symbol:   variable pitchUpSlider
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:221: error: cannot find symbol
+          pitchUpSlider = findViewById(R.id.pitch_up_slider);
+                                           ^
+    symbol:   variable pitch_up_slider
+    location: class id
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:282: error: cannot find symbol
+          resampleButton = (Button) findViewById(R.id.resample_button);
+          ^
+    symbol:   variable resampleButton
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:282: error: cannot find symbol
+          resampleButton = (Button) findViewById(R.id.resample_button);
+                                                     ^
+    symbol:   variable resample_button
+    location: class id
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:283: error: cannot find symbol
+          resampleButton.setOnClickListener(new View.OnClickListener() {
+          ^
+    symbol:   variable resampleButton
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:293: error: cannot find symbol
+          pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
+          ^
+    symbol:   variable pitchUpButton
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:293: error: cannot find symbol
+          pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
+                                                    ^
+    symbol:   variable pitch_up_button
+    location: class id
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:294: error: cannot find symbol
+          cropButton = (Button) findViewById(R.id.crop_button);
+          ^
+    symbol:   variable cropButton
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:294: error: cannot find symbol
+          cropButton = (Button) findViewById(R.id.crop_button);
+                                                 ^
+    symbol:   variable crop_button
+    location: class id
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:297: error: cannot find symbol
+          pitchUpButton.setOnClickListener(new View.OnClickListener() {
+          ^
+    symbol:   variable pitchUpButton
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:304: error: cannot find symbol
+          cropButton.setOnClickListener(new View.OnClickListener() {
+          ^
+    symbol:   variable cropButton
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:1062: error: cannot find symbol
+          cropButton.setText(cropTitle);
+          ^
+    symbol:   variable cropButton
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:1066: error: cannot find symbol
+          resampleButton.setText(speedTitle);
+          ^
+    symbol:   variable resampleButton
+    location: class MainActivity
+  C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java:1070: error: cannot find symbol
+          pitchUpButton.setText(pitchTitle);
+          ^
+    symbol:   variable pitchUpButton
+    location: class MainActivity
+  Note: C:\Users\jay92\Documents\420 final\ECE420_Final_Project\app\src\main\java\com\ece420\lab4\MainActivity.java uses or overrides a deprecated API.
+  Note: Recompile with -Xlint:deprecation for details.
+  18 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.13/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1s
+17 actionable tasks: 11 executed, 6 up-to-date

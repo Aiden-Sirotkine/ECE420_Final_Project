@@ -8,3 +8,13 @@
 10	513	7861882551750928	CMakeFiles/echo.dir/audio_recorder.cpp.o	1e0cb5f991a1c8bf
 14	520	7861882551800085	CMakeFiles/echo.dir/audio_main.cpp.o	1dcdb16fcf5e5d6f
 520	608	7861882552689839	C:/Users/jay92/Documents/420 final/ECE420_Final_Project/app/build/intermediates/cxx/Debug/235s2n4p/obj/arm64-v8a/libecho.so	e057698474fb6274
+0	5	0	clean	c4d8b85ac6ea980a
+60	409	7868672137894802	CMakeFiles/echo.dir/kiss_fft/kiss_fft.c.o	6bb4171e6a153ba9
+28	1022	7868672144042356	CMakeFiles/echo.dir/audio_common.cpp.o	4ad6ffc6fa0db3db
+40	1051	7868672144342130	CMakeFiles/echo.dir/debug_utils.cpp.o	9c299b8e62b23f17
+47	1052	7868672144362234	CMakeFiles/echo.dir/audio_player.cpp.o	126682fc90defd87
+7	1056	7868672144401159	CMakeFiles/echo.dir/ece420_main.cpp.o	39934519fb8a4b9e
+75	1064	7868672144457300	CMakeFiles/echo.dir/ece420_lib.cpp.o	22273e4d24e4c5d8
+53	1068	7868672144523174	CMakeFiles/echo.dir/audio_recorder.cpp.o	1e0cb5f991a1c8bf
+18	1073	7868672144560020	CMakeFiles/echo.dir/audio_main.cpp.o	1dcdb16fcf5e5d6f
+1073	1272	7868672146527927	C:/Users/jay92/Documents/420 final/ECE420_Final_Project/app/build/intermediates/cxx/Debug/235s2n4p/obj/arm64-v8a/libecho.so	e057698474fb6274
