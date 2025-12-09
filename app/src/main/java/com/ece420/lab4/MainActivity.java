@@ -377,14 +377,15 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case PITCH:
                         // Map 0-100 to 1.0-2.0 (Octave) using 2^(progress/100)
-                        double octave = (double) progress / 100.0;
-                        getCurrentTrackState().pitch_up_percent = Math.pow(2, octave);
+                        getCurrentTrackState().pitch_up_percent = (double) progress / 500.0;
+//                        double octave = (double) progress / 100.0;
+//                        getCurrentTrackState().pitch_up_percent = Math.pow(2, octave);
                         break;
                     case CROP:
 //                        getCurrentTrackState().crop_percent = 1.0 - (progress / 1000.0);
                         // Correct logic to keep within valid range
                          double p = progress / 1000.0;
-                         if (p > 0.95) p = 0.95;
+//                         if (p > 0.95) p = 0.95;
                          getCurrentTrackState().crop_percent = 1.0 - p;
                         break;
                 }
@@ -766,11 +767,14 @@ public class MainActivity extends AppCompatActivity {
                 btnApplyEffect.setText("APPLY SPEED");
                 break;
             case PITCH:
-                activeSlider.setMax(100);
+                activeSlider.setProgress((int)(getCurrentTrackState().pitch_up_percent * 500));
+//                activeSlider.setMax(100);
                 // Calculate progress from pitch ratio: progress = 100 * log2(pitch)
-                if (getCurrentTrackState().pitch_up_percent <= 0) getCurrentTrackState().pitch_up_percent = 1.0;
-                double octave = Math.log(getCurrentTrackState().pitch_up_percent) / Math.log(2);
-                activeSlider.setProgress((int)(octave * 100));
+//                if (getCurrentTrackState().pitch_up_percent <= 0) getCurrentTrackState().pitch_up_percent = 1.0;
+//                double octave = Math.log(getCurrentTrackState().pitch_up_percent) / Math.log(2);
+//                activeSlider.setProgress((int)(octave * 100));
+
+//                remove code and make it so that you can pitch down again
                 tvActiveLabel.setText("Pitch Change");
                 btnApplyEffect.setText("APPLY PITCH");
                 break;
@@ -823,8 +827,8 @@ public class MainActivity extends AppCompatActivity {
     private void updateTuneValueText() {
         switch (currentTuneMode) {
             case SPEED:
-                int speed = (int)(getCurrentTrackState().resample_percent * 100);
-                tvActiveValue.setText(speed + "%");
+                double speed = (getCurrentTrackState().resample_percent * 100);
+                tvActiveValue.setText(String.format("%.1f", speed) + "%");
                 break;
             case PITCH:
                 double pitch = getCurrentTrackState().pitch_up_percent;
@@ -833,8 +837,8 @@ public class MainActivity extends AppCompatActivity {
                 tvActiveValue.setText(String.format("%.2f Octave", oct));
                 break;
             case CROP:
-                int crop = (int)((1.0 - getCurrentTrackState().crop_percent) * 100);
-                 tvActiveValue.setText(crop + "%");
+                double crop = ((1.0 - getCurrentTrackState().crop_percent) * 100.0);
+                 tvActiveValue.setText(String.format("%.1f", crop) + "%");
                 break;
         }
     }
