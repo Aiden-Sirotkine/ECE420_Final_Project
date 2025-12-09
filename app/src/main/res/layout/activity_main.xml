@@ -68,41 +68,31 @@
 
     <!-- Waveform Area (Placeholder) -->
     <!-- Spectrum Visualizer -->
+    <!-- Spectrum Visualizer -->
     <com.ece420.lab4.SpectrumVisualizerView
         android:id="@+id/spectrum_visualizer"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="32dp"
-        app:layout_constraintHeight_percent="0.5"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
         android:background="#222222"
+        app:layout_constraintBottom_toTopOf="@id/mix_status_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_title" />
 
 
 
-    <TextView
-        android:id="@+id/statusView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/init_status"
-        android:textColor="@color/colorTextSecondary"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/spectrum_visualizer" />
-
-    <!-- Control Panel -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/control_panel"
+    <!-- Control Panel Container -->
+    <LinearLayout
+        android:id="@+id/control_panel_container"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/bg_rounded_card"
-        android:padding="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/statusView">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/waveform_seekbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <!-- Track Toggle -->
         <LinearLayout
@@ -112,8 +102,7 @@
             android:background="#2A2A2A"
             android:orientation="horizontal"
             android:padding="4dp"
-            android:layout_marginBottom="16dp"
-            app:layout_constraintTop_toTopOf="parent">
+            android:layout_marginBottom="16dp">
 
             <Button
                 android:id="@+id/btn_track_1"
@@ -122,8 +111,8 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_tab_selected"
                 android:text="Track 1"
-                android:textColor="@color/colorTextPrimary"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="@color/colorTextPrimary" />
 
             <Button
                 android:id="@+id/btn_track_2"
@@ -143,8 +132,7 @@
             android:background="#2A2A2A"
             android:orientation="horizontal"
             android:padding="4dp"
-            android:weightSum="3"
-            app:layout_constraintTop_toBottomOf="@id/track_toggle_container">
+            android:weightSum="3">
 
             <TextView
                 android:id="@+id/tab_separation"
@@ -155,8 +143,8 @@
                 android:gravity="center"
                 android:padding="8dp"
                 android:text="Separation"
-                android:textColor="@color/colorTextPrimary"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="@color/colorTextPrimary" />
 
             <TextView
                 android:id="@+id/tab_tune"
@@ -178,301 +166,363 @@
                 android:text="Mixing"
                 android:textColor="@color/colorTextSecondary" />
         </LinearLayout>
+        
+        <!-- Controls Content (Formerly ScrollView Content) -->
+        <LinearLayout
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:orientation="vertical"
+             android:padding="16dp"
+             android:background="@drawable/bg_rounded_card">
 
-        <ScrollView
-            android:id="@+id/controls_scroll_view"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:fillViewport="true"
-            app:layout_constraintTop_toBottomOf="@id/tabs_container"
-            app:layout_constraintBottom_toTopOf="@+id/progress_container">
-
+            <!-- Content: Separation (Default) -->
+            <FrameLayout
+                android:id="@+id/separation_controls_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp">
+    
+                <Button
+                    android:id="@+id/repet"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:background="@drawable/bg_gradient_button"
+                    android:onClick="REPETClick"
+                    android:text="START SEPARATION"
+                    android:textColor="@color/colorTextPrimary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+    
+                <LinearLayout
+                    android:id="@+id/vocal_instrumental_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+    
+                    <Button
+                        android:id="@+id/btn_vocal"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_toggle_button"
+                        android:text="Vocal"
+                        android:textColor="@color/colorTextPrimary"
+                        android:elevation="4dp" />
+    
+                    <Button
+                        android:id="@+id/btn_instrumental"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_toggle_button"
+                        android:text="Instrumental"
+                        android:textColor="@color/colorTextPrimary"
+                        android:elevation="4dp" />
+                </LinearLayout>
+            </FrameLayout>
+    
+            <Button
+                android:id="@+id/btn_original_track"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_original_track_button"
+                android:text="ORIGINAL TRACK"
+                android:textColor="@color/colorTextPrimary"
+                android:textStyle="bold"
+                android:elevation="4dp" />
+                
             <LinearLayout
+                android:id="@+id/tune_controls"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingBottom="16dp">
+                android:visibility="gone"
+                android:layout_marginTop="12dp">
 
-                <!-- Content: Separation (Default) -->
-                <FrameLayout
-                    android:id="@+id/separation_controls_container"
+                <!-- Toggle Bar for Mode Selection -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_button_soft"
+                    android:padding="4dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/btn_mode_speed"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="Speed"
+                        android:textColor="@color/colorTextPrimary"
+                        android:background="@drawable/bg_tab_pill"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <TextView
+                        android:id="@+id/btn_mode_pitch"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="Pitch"
+                        android:textColor="@color/colorTextSecondary"
+                        android:background="@drawable/bg_tab_pill"
+                        android:clickable="true"
+                        android:focusable="true"/>
+
+                    <TextView
+                        android:id="@+id/btn_mode_crop"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="Crop"
+                        android:textColor="@color/colorTextSecondary"
+                        android:background="@drawable/bg_tab_pill"
+                        android:clickable="true"
+                        android:focusable="true"/>
+                </LinearLayout>
+
+                <!-- Dynamic Control Area -->
+                <TextView
+                    android:id="@+id/tv_active_value"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="48dp">
-        
-                    <Button
-                        android:id="@+id/repet"
-                        android:layout_width="match_parent"
-                        android:layout_height="60dp"
-                        android:background="@drawable/bg_gradient_button"
-                        android:onClick="REPETClick"
-                        android:text="START SEPARATION"
-                        android:textColor="@color/colorTextPrimary"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-        
-                    <LinearLayout
-                        android:id="@+id/vocal_instrumental_container"
-                        android:layout_width="match_parent"
-                        android:layout_height="60dp"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-        
-                        <Button
-                            android:id="@+id/btn_vocal"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
-                            android:background="@drawable/bg_toggle_button"
-                            android:text="Vocal"
-                            android:textColor="@color/colorTextPrimary"
-                            android:elevation="4dp" />
-        
-                        <Button
-                            android:id="@+id/btn_instrumental"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
-                            android:background="@drawable/bg_toggle_button"
-                            android:text="Instrumental"
-                            android:textColor="@color/colorTextPrimary"
-                            android:elevation="4dp" />
-                    </LinearLayout>
-                </FrameLayout>
-        
+                    android:layout_marginTop="24dp"
+                    android:gravity="center"
+                    android:text="100%"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorTextPrimary" />
+
+                <TextView
+                    android:id="@+id/tv_active_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Current Speed"
+                    android:textSize="12sp"
+                    android:textColor="@color/colorTextSecondary"
+                    android:layout_marginBottom="16dp"/>
+
+                <SeekBar
+                    android:id="@+id/active_slider"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="1000"
+                    android:progress="500"
+                    android:progressTint="@color/colorAccent"
+                    android:thumbTint="@color/colorAccent" />
+
+                <!-- Action Button -->
                 <Button
-                    android:id="@+id/btn_original_track"
+                    android:id="@+id/btn_apply_effect"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
                     android:layout_marginTop="16dp"
-                    android:background="@drawable/bg_original_track_button"
-                    android:text="ORIGINAL TRACK"
+                    android:backgroundTint="@color/colorAccent"
+                    android:text="APPLY RE-SAMPLE"
                     android:textColor="@color/colorTextPrimary"
-                    android:textStyle="bold"
-                    android:elevation="4dp" />
-                    
-                <LinearLayout
-                    android:id="@+id/tune_controls"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    android:layout_marginTop="24dp"
-                    android:background="@drawable/bg_rounded_card"
-                    android:padding="16dp">
-
-                    <!-- Toggle Bar for Mode Selection -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:background="@drawable/bg_button_soft"
-                        android:padding="4dp"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/btn_mode_speed"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:text="Speed"
-                            android:textColor="@color/colorTextPrimary"
-                            android:background="@drawable/bg_tab_pill"
-                            android:clickable="true"
-                            android:focusable="true"/>
-
-                        <TextView
-                            android:id="@+id/btn_mode_pitch"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:text="Pitch"
-                            android:textColor="@color/colorTextSecondary"
-                            android:background="@drawable/bg_tab_pill"
-                            android:clickable="true"
-                            android:focusable="true"/>
-
-                        <TextView
-                            android:id="@+id/btn_mode_crop"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:text="Crop"
-                            android:textColor="@color/colorTextSecondary"
-                            android:background="@drawable/bg_tab_pill"
-                            android:clickable="true"
-                            android:focusable="true"/>
-                    </LinearLayout>
-
-                    <!-- Dynamic Control Area -->
-                    <TextView
-                        android:id="@+id/tv_active_value"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="24dp"
-                        android:gravity="center"
-                        android:text="100%"
-                        android:textSize="32sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/colorTextPrimary" />
-
-                    <TextView
-                        android:id="@+id/tv_active_label"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:text="Current Speed"
-                        android:textSize="12sp"
-                        android:textColor="@color/colorTextSecondary"
-                        android:layout_marginBottom="16dp"/>
-
-                    <SeekBar
-                        android:id="@+id/active_slider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="1000"
-                        android:progress="500"
-                        android:progressTint="@color/colorAccent"
-                        android:thumbTint="@color/colorAccent" />
-
-                    <!-- Action Button -->
-                    <Button
-                        android:id="@+id/btn_apply_effect"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="16dp"
-                        android:backgroundTint="@color/colorAccent"
-                        android:text="APPLY RE-SAMPLE"
-                        android:textColor="@color/colorTextPrimary"
-                        android:textStyle="bold"/>
-
-                </LinearLayout>
-        
-                <LinearLayout
-                    android:id="@+id/mixing_controls"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    android:layout_marginTop="24dp">
-                    
-                    <Button
-                        android:id="@+id/mix_button"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Mix"
-                        android:onClick="mixClick"
-                        android:backgroundTint="@color/colorSurfaceLight"/>
-        
-                </LinearLayout>
+                    android:textStyle="bold"/>
 
             </LinearLayout>
-        </ScrollView>
-
-        <Button
-            android:id="@+id/repet_vocal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:text="repet vocal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="parent"/>
+    
+            <LinearLayout
+                android:id="@+id/mixing_controls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="12dp">
+                
+                <Button
+                    android:id="@+id/mix_button"
+                    android:layout_width="140dp"
+                    android:layout_height="140dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="16dp"
+                    android:text="MIX!"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:onClick="mixClick"
+                    android:background="@drawable/bg_mix_button"
+                    android:elevation="12dp"
+                    android:stateListAnimator="@null"/>
+    
+            </LinearLayout>
             
-        <Button
-            android:id="@+id/repet_instrumental_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:text="repet instrumental"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="parent"/>
-            
-        <Button
-            android:id="@+id/load_file_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:text="Load"
-            android:onClick="loadFileClick"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="parent"/>
-
-
-        <!-- Progress Bar Area -->
-        <LinearLayout
-            android:id="@+id/progress_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toTopOf="@id/playback_controls">
-
-            <TextView
-                android:id="@+id/tv_current_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="00:00"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="12sp"
-                android:fontFamily="monospace" />
-
-            <SeekBar
-                android:id="@+id/playback_seekbar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="8dp"
-                android:max="1000"
-                android:progress="0"
-                android:progressTint="@color/colorAccent"
-                android:thumbTint="@color/colorAccent" />
-
-            <TextView
-                android:id="@+id/tv_total_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="00:00"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="12sp"
-                android:fontFamily="monospace" />
         </LinearLayout>
 
-        <!-- Playback Controls -->
-        <LinearLayout
-            android:id="@+id/playback_controls"
-            android:layout_width="match_parent"
+    </LinearLayout>
+    
+    <!-- Status View (Anchored to Top of Controls) -->
+    <TextView
+        android:id="@+id/statusView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/init_status"
+        android:textColor="@color/colorTextSecondary"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@id/control_panel_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Mix Status Indicator (Anchored to Top of Status) -->
+    <LinearLayout
+        android:id="@+id/mix_status_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"
+        android:paddingHorizontal="16dp"
+        app:layout_constraintBottom_toTopOf="@id/statusView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/tv_track1_status"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_button_soft"
             android:gravity="center"
-            android:orientation="horizontal"
-            android:layout_marginBottom="32dp"
-            app:layout_constraintBottom_toBottomOf="parent">
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="12dp"
+            android:text="T1: Original"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="12sp"
+            android:layout_marginEnd="8dp"/>
 
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@android:drawable/ic_media_previous"
-                app:tint="@color/colorTextPrimary" />
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@android:drawable/ic_input_add"
+            app:tint="@color/colorTextSecondary" />
 
-            <ImageView
-                android:id="@+id/btn_play_pause"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_marginHorizontal="32dp"
-                android:src="@drawable/ic_play_circle" />
+        <TextView
+            android:id="@+id/tv_track2_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_button_soft"
+            android:gravity="center"
+            android:paddingVertical="8dp"
+            android:paddingHorizontal="12dp"
+            android:text="T2: Empty"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="12sp"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
 
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@android:drawable/ic_media_next"
-                app:tint="@color/colorTextPrimary" />
-        </LinearLayout>
+    <!-- Waveform Playbar (Anchored to Bottom Components) -->
+    <com.ece420.lab4.SpectrumVisualizerView
+        android:id="@+id/waveform_seekbar"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="4dp"
+        app:layout_constraintBottom_toTopOf="@id/progress_container" />
+
+    <!-- Time Labels -->
+    <LinearLayout
+        android:id="@+id/progress_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@id/playback_controls">
+
+        <TextView
+            android:id="@+id/tv_current_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="12sp"
+            android:fontFamily="monospace" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/tv_total_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="12sp"
+            android:fontFamily="monospace" />
+    </LinearLayout>
+
+    <!-- Playback Controls -->
+    <LinearLayout
+        android:id="@+id/playback_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:layout_marginBottom="32dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_media_previous"
+            app:tint="@color/colorTextPrimary" />
+
+        <ImageView
+            android:id="@+id/btn_play_pause"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginHorizontal="32dp"
+            android:src="@drawable/ic_play_circle" />
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_media_next"
+            app:tint="@color/colorTextPrimary" />
+    </LinearLayout>
+    
+    <Button
+        android:id="@+id/repet_vocal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text="repet vocal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="parent"/>
+        
+    <Button
+        android:id="@+id/repet_instrumental_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text="repet instrumental"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="parent"/>
+        
+    <Button
+        android:id="@+id/load_file_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text="Load"
+        android:onClick="loadFileClick"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-</androidx.constraintlayout.widget.ConstraintLayout>

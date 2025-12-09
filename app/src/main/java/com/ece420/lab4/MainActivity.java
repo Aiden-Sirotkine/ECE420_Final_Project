@@ -59,8 +59,11 @@ public class MainActivity extends AppCompatActivity {
 
     
     // Playback Bar
-    SeekBar playbackSeekBar;
+    SpectrumVisualizerView waveformSeekBar;
     TextView tvCurrentTime, tvTotalTime;
+    
+    // Mix Status
+    TextView tvTrack1Status, tvTrack2Status;
 
     private Visualizer mVisualizer;
     private static final int PERMISSION_REQUEST_AUDIO = 2;
@@ -198,6 +201,7 @@ public class MainActivity extends AppCompatActivity {
         super.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         // UI Elements
+        checkAudioPermission();
         statusView = (TextView) findViewById(R.id.statusView);
 
         // New UI Elements
@@ -206,52 +210,41 @@ public class MainActivity extends AppCompatActivity {
         tabMixing = (TextView) findViewById(R.id.tab_mixing);
         mTuneControls = (LinearLayout) findViewById(R.id.tune_controls);
         mMixingControls = (LinearLayout) findViewById(R.id.mixing_controls);
-        btnPlayPause = (ImageView) findViewById(R.id.btn_play_pause);
 
-        btnDownload = (ImageView) findViewById(R.id.btn_download);
+        // Initialize Waveform SeekBar
+        waveformSeekBar = findViewById(R.id.waveform_seekbar);
+        // Important: Make sure SpectrumVisualizerView handles nulls if not in layout yet? It is in layout.
+        if (waveformSeekBar != null) {
+            waveformSeekBar.setMode(SpectrumVisualizerView.Mode.WAVEFORM);
+            waveformSeekBar.setOnSeekListener(new SpectrumVisualizerView.OnSeekListener() {
+                @Override
+                public void onSeekStart() {
+                    stopProgressUpdater();
+                }
 
-        spectrumVisualizer = (SpectrumVisualizerView) findViewById(R.id.spectrum_visualizer);
-        // Initialize Playback Bar
-        playbackSeekBar = findViewById(R.id.playback_seekbar);
+                @Override
+                public void onSeek(float progress) {
+                    // Update time labels
+                     long totalMs = getDurationMillis();
+                     if (totalMs > 0) {
+                          long currentMs = (long)(totalMs * progress);
+                          if (tvCurrentTime != null) tvCurrentTime.setText(formatTime(currentMs));
+                     }
+                }
+
+                @Override
+                public void onSeekEnd(float progress) {
+                    seekToProgress(progress);
+                }
+            });
+        }
+
         tvCurrentTime = findViewById(R.id.tv_current_time);
         tvTotalTime = findViewById(R.id.tv_total_time);
-
-
         
-        playbackSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    float seekPercent = progress / 1000f;
-                    
-                    // Update time labels based on user drag immediately
-                    long totalMs = getDurationMillis();
-                    if (totalMs > 0) {
-                         long currentMs = (long)(totalMs * seekPercent);
-                         tvCurrentTime.setText(formatTime(currentMs));
-                    }
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                stopProgressUpdater(); // Stop updates while dragging to prevent fighting
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // Seek only when user releases the thumb
-                float seekPercent = seekBar.getProgress() / 1000f;
-                seekToProgress(seekPercent);
-            }
-        });
-
-        // SpectrumVisualizer Listener (Optional: keep for touch interaction if desired, or remove since bar handles it)
-        // User asked to "let playback bar take responsibility". 
-        // We will DISABLE seeking on the visualizer directly or just ignore it implies removing toggle.
-        // We can keep visualizer pure output.
-        // spectrumVisualizer.setListener(null); 
-
+        tvTrack1Status = findViewById(R.id.tv_track1_status);
+        tvTrack2Status = findViewById(R.id.tv_track2_status);
+        updateMixStatusUI();
 
         setupToggleButtons();
         
@@ -272,24 +265,88 @@ public class MainActivity extends AppCompatActivity {
                 switchTrack(2);
             }
         });
+        
+        btnPlayPause = (ImageView) findViewById(R.id.btn_play_pause);
+        btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Play/Pause Playback Logic
+                if (isAudioPlaying()) {
+                    pauseAudio();
+                } else {
+                    // Optimized: Try to resume current track if it exists and matches state
+                    if (currentAudioTrack != null && currentAudioTrack.getState() == AudioTrack.STATE_INITIALIZED 
+                             && currentAudioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
+                        currentAudioTrack.play();
+                        startProgressUpdater();
+                        btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
+                        return; 
+                    }
+                    if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+                         mediaPlayer.start();
+                         startProgressUpdater();
+                         btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
+                         return;
+                    }
+                    
+                    // Fallback to start new playback
+                    float progress = getCurrentProgress();
+                    switch (getCurrentTrackState().currentAudioState) {
+                        case ORIGINAL:
+                            if (getCurrentTrackState().originalSamples != null) {
+                                playAudio(getCurrentTrackState().originalSamples, getCurrentTrackState().originalSampleRate, progress);
+                            } else if (mediaPlayer != null) {
+                                mediaPlayer.start();
+                                setupVisualizer(mediaPlayer.getAudioSessionId());
+                                startProgressUpdater();
+                                btnPlayPause.setImageResource(R.drawable.ic_pause_circle);
+                            }
+                            break;
+                        case VOCAL:
+                            if (getCurrentTrackState().vocalSamples != null) {
+                                playAudio(getCurrentTrackState().vocalSamples, getCurrentTrackState().vocalSampleRate, progress);
+                            } else {
+                                Toast.makeText(MainActivity.this, "No vocal track", Toast.LENGTH_SHORT).show();
+                            }
+                            break;
+                        case INSTRUMENTAL:
+                            if (getCurrentTrackState().instrumentalSamples != null) {
+                                playAudio(getCurrentTrackState().instrumentalSamples, getCurrentTrackState().instrumentalSampleRate, progress);
+                            } else {
+                                Toast.makeText(MainActivity.this, "No instrumental track", Toast.LENGTH_SHORT).show();
+                            }
+                            break;
+                            
+                        case MIX:
+                            if (mixedSamples != null) {
+                                playAudio(mixedSamples, 44100, progress);
+                            } else {
+                                Toast.makeText(MainActivity.this, "No mix track", Toast.LENGTH_SHORT).show();
+                            }
+                            break;
+                    }
+                }
+            }
+        });
 
-        // Initialize MediaPlayer
         // Initialize MediaPlayer
         updateMediaPlayer();
 
         repetButton = (Button) findViewById(R.id.repet);
         repetVocalButton = (Button) findViewById(R.id.repet_vocal);
         repetInstrumentalButton = (Button) findViewById(R.id.repet_instrumental_button);
-        // pitchUpButton = (Button) findViewById(R.id.pitch_up_button);
-        // cropButton = (Button) findViewById(R.id.crop_button);
         mixButton = (Button) findViewById(R.id.mix_button);
+        btnDownload = (ImageView) findViewById(R.id.btn_download);
 
-        mixButton.setOnClickListener(new View.OnClickListener() {
+        // Download/Load Button Listener
+        btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mixClick(v);
+                loadFileClick(v);
             }
         });
+
+        spectrumVisualizer = (SpectrumVisualizerView) findViewById(R.id.spectrum_visualizer);
 
         // Tab Click Listeners
         View.OnClickListener tabListener = new View.OnClickListener() {
@@ -302,90 +359,7 @@ public class MainActivity extends AppCompatActivity {
         tabSeparation.setOnClickListener(tabListener);
         tabTune.setOnClickListener(tabListener);
         tabMixing.setOnClickListener(tabListener);
-
-        // Play Button Listener
-        btnPlayPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // If playing, pause (don't release)
-                if ((mediaPlayer != null && mediaPlayer.isPlaying()) ||
-                        (currentAudioTrack != null && currentAudioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING)) {
-                    pauseAudio();
-                    return;
-                }
-
-                // Otherwise, play based on state
-                btnPlayPause.setImageResource(R.drawable.ic_pause_circle); // Assume playing starts
-                
-                float progress = getCurrentProgress();
-
-                // Optimized: Try to resume current track if it exists and matches state
-                if (currentAudioTrack != null && currentAudioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
-                    // Assuming track matches getCurrentTrackState().currentAudioState because changing state calls stopAllAudio (release)
-                    currentAudioTrack.play();
-                    startProgressUpdater();
-                    return; 
-                }
-
-                switch (getCurrentTrackState().currentAudioState) {
-                    case ORIGINAL:
-                        if (getCurrentTrackState().originalSamples != null) {
-                            playAudio(getCurrentTrackState().originalSamples, getCurrentTrackState().originalSampleRate, progress);
-                        } else {
-                            if (mediaPlayer != null) {
-                                mediaPlayer.start();
-                                setupVisualizer(mediaPlayer.getAudioSessionId());
-                                startProgressUpdater();
-                            }
-                        }
-                        break;
-                    case VOCAL:
-                        if (getCurrentTrackState().vocalSamples != null) playAudio(getCurrentTrackState().vocalSamples, getCurrentTrackState().vocalSampleRate, progress);
-                        else
-                            Toast.makeText(MainActivity.this, "No vocal track", Toast.LENGTH_SHORT).show();
-                        break;
-                    case INSTRUMENTAL:
-                        if (getCurrentTrackState().instrumentalSamples != null)
-                            playAudio(getCurrentTrackState().instrumentalSamples, getCurrentTrackState().instrumentalSampleRate, progress);
-                        else
-                            Toast.makeText(MainActivity.this, "No instrumental track", Toast.LENGTH_SHORT).show();
-                        break;
-//                    case SPEED:
-//                        if (speedSamples != null) {
-//                            playAudio(speedSamples, speedSampleRate, progress);
-//                        } else {
-//                            Toast.makeText(MainActivity.this, "No speed track", Toast.LENGTH_SHORT).show();
-//                        }
-//                        break;
-//                    case PITCH:
-//                        if (wsolaSamples != null) playAudio(wsolaSamples, wsolaSampleRate, progress);
-//                        else
-//                            Toast.makeText(MainActivity.this, "No pitch track", Toast.LENGTH_SHORT).show();
-//                        break;
-                    case MIX:
-                        if (mixedSamples != null)
-                            playAudio(mixedSamples, 44100, progress); // Mix usually 44100
-                        else
-                            Toast.makeText(MainActivity.this, "No mix track", Toast.LENGTH_SHORT).show();
-                        break;
-//                    case CROP:
-//                        if (croppedSamples != null) playAudio(croppedSamples, croppedSampleRate);
-//                        else
-//                            Toast.makeText(MainActivity.this, "No crop track", Toast.LENGTH_SHORT).show();
-//                        break;
-                }
-            }
-        });
-
-        // Download/Load Button Listener
-        btnDownload.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loadFileClick(v);
-            }
-        });
-
-
+        
         // Tune & Tempo Controls Setup
         btnModeSpeed = findViewById(R.id.btn_mode_speed);
         btnModePitch = findViewById(R.id.btn_mode_pitch);
@@ -419,17 +393,12 @@ public class MainActivity extends AppCompatActivity {
                 
                 switch (currentTuneMode) {
                     case SPEED:
-                        // Range: 0 to 200% (Progress 0-1000). Default 500 = 100%.
                         getCurrentTrackState().resample_percent = (double) progress / 500.0;
                         break;
                     case PITCH:
-                         // Range: 0 to 200%. Default 500 = 100%.
                         getCurrentTrackState().pitch_up_percent = (double) progress / 500.0;
                         break;
                     case CROP:
-                        // Range: Keep 100% (0) to Keep 0% (1000).
-                        // stored value is "amount to keep" (0.0 to 1.0)
-                        // progress 0 -> keep 1.0. progress 1000 -> keep 0.0.
                         getCurrentTrackState().crop_percent = 1.0 - (progress / 1000.0);
                         break;
                 }
@@ -459,15 +428,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
-
     }
 
     @Override
     protected void onDestroy() {
-        // Clean up REPET audio
-        stopCurrentAudio();
-
         // Clean up speed audio player
         if (isSpeedPlaying) {
             stopSpeedAudio();
@@ -488,6 +452,7 @@ public class MainActivity extends AppCompatActivity {
             mVisualizer = null;
         }
 
+        stopCurrentAudio();
         super.onDestroy();
     }
 
@@ -673,29 +638,29 @@ public class MainActivity extends AppCompatActivity {
         repetButton.setVisibility(View.GONE);
         vocalInstrumentalContainer.setVisibility(View.GONE);
         btnOriginalTrack.setVisibility(View.GONE);
-        mTuneControls.setVisibility(View.GONE);
-        mMixingControls.setVisibility(View.GONE);
+        if (mTuneControls != null) mTuneControls.setVisibility(View.GONE);
+        if (mMixingControls != null) mMixingControls.setVisibility(View.GONE);
 
-        // Update selected tab
         if (selectedId == R.id.tab_separation) {
             tabSeparation.setBackgroundResource(R.drawable.bg_tab_selected);
             tabSeparation.setTextColor(getResources().getColor(R.color.colorTextPrimary));
 
-            // Check if separation is already done
             if (getCurrentTrackState().vocalSamples != null) {
                 vocalInstrumentalContainer.setVisibility(View.VISIBLE);
             } else {
                 repetButton.setVisibility(View.VISIBLE);
             }
             btnOriginalTrack.setVisibility(View.VISIBLE);
+
         } else if (selectedId == R.id.tab_tune) {
             tabTune.setBackgroundResource(R.drawable.bg_tab_selected);
             tabTune.setTextColor(getResources().getColor(R.color.colorTextPrimary));
-            mTuneControls.setVisibility(View.VISIBLE);
+            if (mTuneControls != null) mTuneControls.setVisibility(View.VISIBLE);
+
         } else if (selectedId == R.id.tab_mixing) {
             tabMixing.setBackgroundResource(R.drawable.bg_tab_selected);
             tabMixing.setTextColor(getResources().getColor(R.color.colorTextPrimary));
-            mMixingControls.setVisibility(View.VISIBLE);
+            if (mMixingControls != null) mMixingControls.setVisibility(View.VISIBLE);
         }
     }
 
@@ -833,9 +798,10 @@ public class MainActivity extends AppCompatActivity {
         } else if (getCurrentTrackState().currentAudioState == AudioState.INSTRUMENTAL) {
             btnInstrumental.setSelected(true);
         } else if (getCurrentTrackState().currentAudioState == AudioState.ORIGINAL) {
-        } else if (getCurrentTrackState().currentAudioState == AudioState.ORIGINAL) {
             btnOriginalTrack.setSelected(true);
         }
+        
+        updateMixStatusUI();
     }
 
     private void updateTuneUI() {
@@ -844,8 +810,7 @@ public class MainActivity extends AppCompatActivity {
         btnModePitch.setSelected(currentTuneMode == TuneMode.PITCH);
         btnModeCrop.setSelected(currentTuneMode == TuneMode.CROP);
         
-        // Update Colors (assuming selected state handles background, we just need to ensure text color is readable)
-        // Actually the pill selector handles background. Text color logic:
+        // Update Colors
         btnModeSpeed.setTextColor(getResources().getColor(currentTuneMode == TuneMode.SPEED ? R.color.colorTextPrimary : R.color.colorTextSecondary));
         btnModePitch.setTextColor(getResources().getColor(currentTuneMode == TuneMode.PITCH ? R.color.colorTextPrimary : R.color.colorTextSecondary));
         btnModeCrop.setTextColor(getResources().getColor(currentTuneMode == TuneMode.CROP ? R.color.colorTextPrimary : R.color.colorTextSecondary));
@@ -870,6 +835,42 @@ public class MainActivity extends AppCompatActivity {
                 tvActiveLabel.setText("Amount to Crop");
                 btnApplyEffect.setText("APPLY CROP");
                 break;
+        }
+    }
+
+    private void updateMixStatusUI() {
+        if (tvTrack1Status == null || tvTrack2Status == null) return;
+        
+        // Track 1
+        String t1Text = "T1: Empty";
+        int t1Color = R.color.colorTextSecondary;
+        if (track1.fileUri != null || track1.originalSamples != null) {
+            t1Text = "T1: " + getStatusLabel(track1.currentAudioState);
+            t1Color = (currentTrackId == 1) ? R.color.colorAccent : R.color.colorTextPrimary;
+        }
+        tvTrack1Status.setText(t1Text);
+        tvTrack1Status.setTypeface(null, (currentTrackId == 1) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        tvTrack1Status.setTextColor(getResources().getColor(t1Color));
+
+        // Track 2
+        String t2Text = "T2: Empty";
+        int t2Color = R.color.colorTextSecondary;
+        if (track2.fileUri != null || track2.originalSamples != null) {
+            t2Text = "T2: " + getStatusLabel(track2.currentAudioState);
+             t2Color = (currentTrackId == 2) ? R.color.colorAccent : R.color.colorTextPrimary;
+        }
+        tvTrack2Status.setText(t2Text);
+        tvTrack2Status.setTypeface(null, (currentTrackId == 2) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        tvTrack2Status.setTextColor(getResources().getColor(t2Color));
+    }
+    
+    private String getStatusLabel(AudioState state) {
+        switch (state) {
+            case ORIGINAL: return "Original";
+            case VOCAL: return "Vocal";
+            case INSTRUMENTAL: return "Instr.";
+            case MIX: return "Mix";
+            default: return "Custom";
         }
     }
 
@@ -927,8 +928,8 @@ public class MainActivity extends AppCompatActivity {
             }
             
             // Update Playback Bar
-            if (playbackSeekBar != null) {
-                playbackSeekBar.setProgress((int)(progress * 1000));
+            if (waveformSeekBar != null) {
+                waveformSeekBar.setProgress(progress);
             }
             
             // Update Time Labels
@@ -1030,16 +1031,31 @@ public class MainActivity extends AppCompatActivity {
         // Logic in listener: percent = (double)progress/10.0 => 0-100. Then /100 => 0-1. Then 1-percent.
         // Reverse: real_percent = 1 - ts.crop_percent. stored_percent = real_percent. progress = stored_percent * 100 * 10.
         // Simplification: just reset sliders to center or match default? 
-        // Ideally we map it back.
-        // Let's assume progress = ts.crop_percent * 1000 for now if simplified. 
-        // But since we didn't implement perfect reverse logic yet, let's just update the Button Text to reflect state.
-        
         updateTuneUI();
+        updateToggleUI();
+        updateMediaPlayer();
+
+        // Refresh Separation Tab UI state
+        if (getCurrentTrackState().vocalSamples != null) {
+            vocalInstrumentalContainer.setVisibility(View.VISIBLE);
+            repetButton.setVisibility(View.GONE);
+        } else {
+            vocalInstrumentalContainer.setVisibility(View.GONE);
+            repetButton.setVisibility(View.VISIBLE);
+        }
 
         // Update Visualizer
         if (spectrumVisualizer != null) {
-             spectrumVisualizer.setProgress(0); // Reset visual progress or restore last known?
-             // spectrumVisualizer.updateVisualizer(null); // Clear
+            spectrumVisualizer.setProgress(0); 
+        }
+
+        if (waveformSeekBar != null) {
+             waveformSeekBar.setProgress(0);
+             if (ts.originalSamples != null) {
+                 waveformSeekBar.setWaveformSamples(ts.originalSamples);
+             } else {
+                 waveformSeekBar.setWaveformSamples(null);
+             }
         }
     }
 
@@ -1050,6 +1066,7 @@ public class MainActivity extends AppCompatActivity {
                 repetButton.setVisibility(View.VISIBLE);
                 vocalInstrumentalContainer.setVisibility(View.GONE);
                 getCurrentTrackState().currentAudioState = AudioState.ORIGINAL;
+                updateMixStatusUI();
                 stopAllAudio();
             }
         });
@@ -1098,6 +1115,9 @@ public class MainActivity extends AppCompatActivity {
             setupVisualizer(currentAudioTrack.getAudioSessionId());
             if (spectrumVisualizer != null) {
                 spectrumVisualizer.setWaveformSamples(samples);
+            }
+            if (waveformSeekBar != null) {
+                waveformSeekBar.setWaveformSamples(samples);
             }
 
             btnPlayPause.setImageResource(R.drawable.ic_pause_circle);

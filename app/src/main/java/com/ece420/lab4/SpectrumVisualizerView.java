@@ -28,11 +28,17 @@ public class SpectrumVisualizerView extends View {
     // Waveform data (full track)
     private short[] mWaveformSamples;
     private float mProgress = 0f; // 0.0 to 1.0
+    
+    // Paints for Waveform
+    private Paint mPlayedPaint = new Paint();
+    private Paint mRemainingPaint = new Paint();
 
     private OnSeekListener mListener;
 
     public interface OnSeekListener {
+        void onSeekStart();
         void onSeek(float progress);
+        void onSeekEnd(float progress);
     }
 
     public SpectrumVisualizerView(Context context) {
@@ -56,10 +62,18 @@ public class SpectrumVisualizerView extends View {
         mForePaint.setStyle(Paint.Style.FILL);
         
         mGridPaint.setColor(Color.argb(30, 255, 255, 255));
+        
+        mPlayedPaint.setColor(0xFF7C3AED); // Violet Accent
+        mPlayedPaint.setStyle(Paint.Style.FILL);
+        mPlayedPaint.setAntiAlias(true);
+
+        mRemainingPaint.setColor(0xFF555555); // Dark Gray
+        mRemainingPaint.setStyle(Paint.Style.FILL);
+        mRemainingPaint.setAntiAlias(true);
         mGridPaint.setStrokeWidth(2f);
     }
 
-    public void setListener(OnSeekListener listener) {
+    public void setOnSeekListener(OnSeekListener listener) {
         this.mListener = listener;
     }
 
@@ -174,70 +188,69 @@ public class SpectrumVisualizerView extends View {
     }
 
     private void drawWaveform(Canvas canvas) {
-        // Draw background grid/line
-        float centerY = getHeight() / 2f;
-        canvas.drawLine(0, centerY, getWidth(), centerY, mGridPaint);
-
         if (mWaveformSamples == null) {
+            // Draw a flat line if no samples
+            canvas.drawLine(0, getHeight() / 2f, getWidth(), getHeight() / 2f, mGridPaint);
             return;
         }
         
-        // Draw full waveform
         int width = getWidth();
+        int height = getHeight();
+        float centerY = height / 2f;
+
+        // Sampling step
         int step = mWaveformSamples.length / width;
         if (step < 1) step = 1;
         
-        mForePaint.setShader(null);
-        mForePaint.setColor(0xFF2DD4BF); // Cyan
-        mForePaint.setStrokeWidth(2f);
-        
-        // Draw simple envelope
-        float[] pts = new float[width * 4];
-        int ptr = 0;
-        
+        // Draw bars
         for (int i = 0; i < width; i++) {
-            int idx = i * step;
-            if (idx >= mWaveformSamples.length) break;
-            
-            short val = mWaveformSamples[idx];
-            float normalized = (float) val / Short.MAX_VALUE;
-            float h = normalized * (getHeight() / 2f);
-            
-            pts[ptr++] = i;
-            pts[ptr++] = centerY - h;
-            pts[ptr++] = i;
-            pts[ptr++] = centerY + h;
+             int index = i * step;
+             if (index >= mWaveformSamples.length) break;
+             
+             short val = mWaveformSamples[index];
+             // Normalize to height
+             float normalized = (float) val / Short.MAX_VALUE;
+             float barHeight = Math.abs(normalized * centerY * 0.8f); // 80% height max
+             if (barHeight < 2) barHeight = 2; // Minimum visible
+             
+             float top = centerY - barHeight;
+             float bottom = centerY + barHeight;
+             
+             // Check if played
+             float currentXPct = (float) i / width;
+             if (currentXPct <= mProgress) {
+                 canvas.drawRect(i, top, i + 1, bottom, mPlayedPaint);
+             } else {
+                 canvas.drawRect(i, top, i + 1, bottom, mRemainingPaint);
+             }
         }
-        canvas.drawLines(pts, 0, ptr, mForePaint);
         
-        // Draw progress indicator
-        float progressX = mProgress * width;
-        mForePaint.setColor(0xFFFFFFFF); // White
-        mForePaint.setStrokeWidth(4f);
-        canvas.drawLine(progressX, 0, progressX, getHeight(), mForePaint);
-        
-        // Draw glass-like overlay on played part
-        Paint overlay = new Paint();
-        overlay.setColor(Color.argb(50, 124, 58, 237)); // Transparent Purple
-        canvas.drawRect(0, 0, progressX, getHeight(), overlay);
+        // Draw scrubber line
+        float scrubberX = mProgress * width;
+        canvas.drawRect(scrubberX - 2, 0, scrubberX + 2, height, mPlayedPaint);
     }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (mMode == Mode.WAVEFORM) {
-            if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
-                float x = event.getX();
-                float progress = x / getWidth();
-                if (progress < 0) progress = 0;
-                if (progress > 1) progress = 1;
-                
-                mProgress = progress;
-                invalidate();
-                
-                if (mListener != null) {
-                    mListener.onSeek(progress);
-                }
-                return true;
+            float x = event.getX();
+            float progress = x / getWidth();
+            if (progress < 0) progress = 0;
+            if (progress > 1) progress = 1;
+
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (mListener != null) mListener.onSeekStart();
+                    setProgress(progress);
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    setProgress(progress);
+                    if (mListener != null) mListener.onSeek(progress);
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (mListener != null) mListener.onSeekEnd(progress);
+                    return true;
             }
         }
         return super.onTouchEvent(event);
