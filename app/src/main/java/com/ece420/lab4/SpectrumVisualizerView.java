@@ -18,21 +18,27 @@ public class SpectrumVisualizerView extends View {
     }
 
     private byte[] mBytes;
-    private float[] mPoints;
+    private float[] mPreviousHeights;
     private Rect mRect = new Rect();
     private Paint mForePaint = new Paint();
     private Paint mGridPaint = new Paint();
-    private int mSpectrumNumColumns = 60; // Number of bars
+    private int mSpectrumNumColumns = 40; // Fewer columns for blockier "pixel" look
     private Mode mMode = Mode.SPECTRUM;
     
     // Waveform data (full track)
     private short[] mWaveformSamples;
     private float mProgress = 0f; // 0.0 to 1.0
+    
+    // Paints for Waveform
+    private Paint mPlayedPaint = new Paint();
+    private Paint mRemainingPaint = new Paint();
 
     private OnSeekListener mListener;
 
     public interface OnSeekListener {
+        void onSeekStart();
         void onSeek(float progress);
+        void onSeekEnd(float progress);
     }
 
     public SpectrumVisualizerView(Context context) {
@@ -52,15 +58,22 @@ public class SpectrumVisualizerView extends View {
 
     private void init() {
         mBytes = null;
-        mForePaint.setStrokeWidth(8f);
         mForePaint.setAntiAlias(true);
-        mForePaint.setColor(Color.rgb(0, 128, 255));
+        mForePaint.setStyle(Paint.Style.FILL);
         
-        mGridPaint.setColor(Color.argb(50, 255, 255, 255));
+        mGridPaint.setColor(Color.argb(30, 255, 255, 255));
+        
+        mPlayedPaint.setColor(0xFF7C3AED); // Violet Accent
+        mPlayedPaint.setStyle(Paint.Style.FILL);
+        mPlayedPaint.setAntiAlias(true);
+
+        mRemainingPaint.setColor(0xFF555555); // Dark Gray
+        mRemainingPaint.setStyle(Paint.Style.FILL);
+        mRemainingPaint.setAntiAlias(true);
         mGridPaint.setStrokeWidth(2f);
     }
 
-    public void setListener(OnSeekListener listener) {
+    public void setOnSeekListener(OnSeekListener listener) {
         this.mListener = listener;
     }
 
@@ -98,6 +111,10 @@ public class SpectrumVisualizerView extends View {
         }
     }
 
+    public float getProgress() {
+        return mProgress;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -114,118 +131,126 @@ public class SpectrumVisualizerView extends View {
             return;
         }
 
-        if (mPoints == null || mPoints.length < mBytes.length * 4) {
-            mPoints = new float[mBytes.length * 4];
+        if (mPreviousHeights == null || mPreviousHeights.length != mSpectrumNumColumns) {
+            mPreviousHeights = new float[mSpectrumNumColumns];
         }
-
-        mRect.set(0, 0, getWidth(), getHeight());
 
         // Create a gradient for the bars
         Shader shader = new LinearGradient(0, getHeight(), 0, 0,
-                new int[]{0xFF7C3AED, 0xFF2DD4BF}, // Purple to Cyan
-                null, Shader.TileMode.CLAMP);
+                new int[]{0xFF4F46E5, 0xFFEC4899, 0xFFFBBF24}, // Indices: Indigo -> Pink -> Amber
+                new float[]{0.0f, 0.5f, 1.0f}, Shader.TileMode.CLAMP);
         mForePaint.setShader(shader);
-        mForePaint.setStrokeWidth((float) getWidth() / mSpectrumNumColumns * 0.8f); // Bar width with gap
 
-        final int fftSize = mBytes.length / 2; // Real part only usually, or magnitude
-        // Visualizer.getFft() returns real and imaginary parts. 
-        // We need to compute magnitude.
-        
-        // Actually, let's simplify. If we assume mBytes is magnitude (if we pre-process) 
-        // OR we process here. Android Visualizer returns [real, img, real, img...]
-        // The first byte is DC.
-        
-        // Let's just draw what we get for now, assuming standard Visualizer FFT data.
-        // We will aggregate bins to match mSpectrumNumColumns.
-        
+        final int fftSize = mBytes.length / 2;
         int chunk = fftSize / mSpectrumNumColumns;
         if (chunk < 1) chunk = 1;
 
+        float barWidth = getWidth() / (float) mSpectrumNumColumns;
+        float gap = barWidth * 0.2f; // 20% gap
+        float pixelHeight = 15f; // Height of each "pixel" block
+        float pixelGap = 4f;     // Gap between vertical blocks
+
         for (int i = 0; i < mSpectrumNumColumns; i++) {
+            // Calculate magnitude for this frequency bin
             byte rfk = mBytes[2 * i * chunk];
             byte ifk = mBytes[2 * i * chunk + 1];
-            float magnitude = (float) (rfk * rfk + ifk * ifk);
-            int dbValue = (int) (10 * Math.log10(magnitude));
+            float magnitude = (float) Math.hypot(rfk, ifk);
             
-            // Scaling for display
-            // Magnitudes are small, usually. 
-            // Let's try a simpler approach often used: just magnitude.
-            // Actually, Visualizer gives signed bytes.
-            
-            float mag = (float) Math.hypot(rfk, ifk);
-            
-            // Scale to height
-            float barHeight = (mag / 128f) * getHeight() * 2; 
-            if (barHeight > getHeight()) barHeight = getHeight();
-            
-            float x = i * ((float) getWidth() / mSpectrumNumColumns) + (mForePaint.getStrokeWidth() / 2);
-            float startY = getHeight();
-            float stopY = getHeight() - barHeight;
+            // Standardize and scale
+            float dbValue = (float) (10 * Math.log10(magnitude + 1)); // +1 to avoid log(0)
+            float targetHeight = (dbValue * 20f); 
+            if (targetHeight > getHeight()) targetHeight = getHeight();
+            if (targetHeight < 0) targetHeight = 0;
 
-            canvas.drawLine(x, startY, x, stopY, mForePaint);
+            // Smooth decay animation:
+            // If new > old, rise quickly (but maybe smoothed a bit too). 
+            // If new < old, fall slowly (decay).
+            if (targetHeight > mPreviousHeights[i]) {
+                mPreviousHeights[i] = mPreviousHeights[i] + (targetHeight - mPreviousHeights[i]) * 0.5f; // Fast rise
+            } else {
+               mPreviousHeights[i] = Math.max(targetHeight, mPreviousHeights[i] - 10f); // Slow decay
+            }
+
+            float currentHeight = mPreviousHeights[i];
+            float x = i * barWidth + gap / 2;
+            
+            // Draw "Pixels"
+            int numPixels = (int) (currentHeight / (pixelHeight + pixelGap));
+            for (int j = 0; j < numPixels; j++) {
+                float y = getHeight() - (j * (pixelHeight + pixelGap)) - pixelHeight;
+                canvas.drawRoundRect(x, y, x + barWidth - gap, y + pixelHeight, 4f, 4f, mForePaint);
+            }
         }
+        
+        // Request next frame for smooth animation if any bar is still dropping
+        // We can just postInvalidateDelayed(16) to keep 60fps while animating
+        postInvalidateDelayed(16);
     }
 
     private void drawWaveform(Canvas canvas) {
-        // Draw background grid/line
-        float centerY = getHeight() / 2f;
-        canvas.drawLine(0, centerY, getWidth(), centerY, mGridPaint);
-
         if (mWaveformSamples == null) {
+            // Draw a flat line if no samples
+            canvas.drawLine(0, getHeight() / 2f, getWidth(), getHeight() / 2f, mGridPaint);
             return;
         }
         
-        // Draw full waveform
-        // We need to downsample to fit screen width
         int width = getWidth();
+        int height = getHeight();
+        float centerY = height / 2f;
+
+        // Sampling step
         int step = mWaveformSamples.length / width;
         if (step < 1) step = 1;
         
-        mForePaint.setShader(null);
-        mForePaint.setColor(0xFF2DD4BF); // Cyan
-        mForePaint.setStrokeWidth(2f);
-        
-        // Draw simple envelope
+        // Draw bars
         for (int i = 0; i < width; i++) {
-            int idx = i * step;
-            if (idx >= mWaveformSamples.length) break;
-            
-            short val = mWaveformSamples[idx];
-            float normalized = (float) val / Short.MAX_VALUE;
-            float h = normalized * (getHeight() / 2f);
-            
-            canvas.drawLine(i, centerY - h, i, centerY + h, mForePaint);
+             int index = i * step;
+             if (index >= mWaveformSamples.length) break;
+             
+             short val = mWaveformSamples[index];
+             // Normalize to height
+             float normalized = (float) val / Short.MAX_VALUE;
+             float barHeight = Math.abs(normalized * centerY * 0.8f); // 80% height max
+             if (barHeight < 2) barHeight = 2; // Minimum visible
+             
+             float top = centerY - barHeight;
+             float bottom = centerY + barHeight;
+             
+             // Check if played
+             float currentXPct = (float) i / width;
+             if (currentXPct <= mProgress) {
+                 canvas.drawRect(i, top, i + 1, bottom, mPlayedPaint);
+             } else {
+                 canvas.drawRect(i, top, i + 1, bottom, mRemainingPaint);
+             }
         }
         
-        // Draw progress indicator
-        float progressX = mProgress * width;
-        mForePaint.setColor(0xFFFFFFFF); // White
-        mForePaint.setStrokeWidth(4f);
-        canvas.drawLine(progressX, 0, progressX, getHeight(), mForePaint);
-        
-        // Draw glass-like overlay on played part?
-        // Maybe just a semi-transparent rect
-        Paint overlay = new Paint();
-        overlay.setColor(Color.argb(50, 124, 58, 237)); // Transparent Purple
-        canvas.drawRect(0, 0, progressX, getHeight(), overlay);
+        // Draw scrubber line
+        float scrubberX = mProgress * width;
+        canvas.drawRect(scrubberX - 2, 0, scrubberX + 2, height, mPlayedPaint);
     }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (mMode == Mode.WAVEFORM) {
-            if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
-                float x = event.getX();
-                float progress = x / getWidth();
-                if (progress < 0) progress = 0;
-                if (progress > 1) progress = 1;
-                
-                mProgress = progress;
-                invalidate();
-                
-                if (mListener != null) {
-                    mListener.onSeek(progress);
-                }
-                return true;
+            float x = event.getX();
+            float progress = x / getWidth();
+            if (progress < 0) progress = 0;
+            if (progress > 1) progress = 1;
+
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (mListener != null) mListener.onSeekStart();
+                    setProgress(progress);
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    setProgress(progress);
+                    if (mListener != null) mListener.onSeek(progress);
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (mListener != null) mListener.onSeekEnd(progress);
+                    return true;
             }
         }
         return super.onTouchEvent(event);
