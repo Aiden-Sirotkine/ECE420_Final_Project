@@ -398,8 +398,29 @@ public class MainActivity extends AppCompatActivity {
                 statusView.setText("Loaded: " + fileName);
                 Toast.makeText(this, "Audio file loaded: " + fileName, Toast.LENGTH_SHORT).show();
                 
+<<<<<<< Updated upstream
                 loadWaveformAsync();
                 updateMediaPlayer();
+=======
+                switch (currentTuneMode) {
+                    case SPEED:
+                        getCurrentTrackState().resample_percent = (double) progress / 500.0;
+                        break;
+                    case PITCH:
+                        // Map 0-100 to 1.0-2.0 (Octave) using 2^(progress/100)
+                        double octave = (double) progress / 100.0;
+                        getCurrentTrackState().pitch_up_percent = Math.pow(2, octave);
+                        break;
+                    case CROP:
+//                        getCurrentTrackState().crop_percent = 1.0 - (progress / 1000.0);
+                        // Correct logic to keep within valid range
+                         double p = progress / 1000.0;
+                         if (p > 0.95) p = 0.95;
+                         getCurrentTrackState().crop_percent = 1.0 - p;
+                        break;
+                }
+                updateTuneValueText();
+>>>>>>> Stashed changes
             }
         }
     }
@@ -643,6 +664,106 @@ public class MainActivity extends AppCompatActivity {
         } else if (currentAudioState == AudioState.ORIGINAL) {
             btnOriginalTrack.setSelected(true);
         }
+<<<<<<< Updated upstream
+=======
+        
+        updateMixStatusUI();
+    }
+
+    private void updateTuneUI() {
+        // Update Buttons State
+        btnModeSpeed.setSelected(currentTuneMode == TuneMode.SPEED);
+        btnModePitch.setSelected(currentTuneMode == TuneMode.PITCH);
+        btnModeCrop.setSelected(currentTuneMode == TuneMode.CROP);
+        
+        // Update Colors
+        btnModeSpeed.setTextColor(getResources().getColor(currentTuneMode == TuneMode.SPEED ? R.color.colorTextPrimary : R.color.colorTextSecondary));
+        btnModePitch.setTextColor(getResources().getColor(currentTuneMode == TuneMode.PITCH ? R.color.colorTextPrimary : R.color.colorTextSecondary));
+        btnModeCrop.setTextColor(getResources().getColor(currentTuneMode == TuneMode.CROP ? R.color.colorTextPrimary : R.color.colorTextSecondary));
+        
+        updateTuneValueText();
+        
+        // Update Slider Position
+        switch (currentTuneMode) {
+            case SPEED:
+                activeSlider.setMax(1000);
+                activeSlider.setProgress((int)(getCurrentTrackState().resample_percent * 500));
+                tvActiveLabel.setText("Playback Speed");
+                btnApplyEffect.setText("APPLY SPEED");
+                break;
+            case PITCH:
+                activeSlider.setMax(100);
+                // Calculate progress from pitch ratio: progress = 100 * log2(pitch)
+                if (getCurrentTrackState().pitch_up_percent <= 0) getCurrentTrackState().pitch_up_percent = 1.0;
+                double octave = Math.log(getCurrentTrackState().pitch_up_percent) / Math.log(2);
+                activeSlider.setProgress((int)(octave * 100));
+                tvActiveLabel.setText("Pitch Change");
+                btnApplyEffect.setText("APPLY PITCH");
+                break;
+            case CROP:
+                activeSlider.setMax(1000);
+                // inverse: percent = 1.0 - progress/1000.  progress/1000 = 1 - percent. progress = (1-percent)*1000.
+                activeSlider.setProgress((int)((1.0 - getCurrentTrackState().crop_percent) * 1000));
+                tvActiveLabel.setText("Amount to Crop");
+                btnApplyEffect.setText("APPLY CROP");
+                break;
+        }
+    }
+
+    private void updateMixStatusUI() {
+        if (tvTrack1Status == null || tvTrack2Status == null) return;
+        
+        // Track 1
+        String t1Text = "T1: Empty";
+        int t1Color = R.color.colorTextSecondary;
+        if (track1.fileUri != null || track1.originalSamples != null) {
+            t1Text = "T1: " + getStatusLabel(track1.currentAudioState);
+            t1Color = (currentTrackId == 1) ? R.color.colorAccent : R.color.colorTextPrimary;
+        }
+        tvTrack1Status.setText(t1Text);
+        tvTrack1Status.setTypeface(null, (currentTrackId == 1) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        tvTrack1Status.setTextColor(getResources().getColor(t1Color));
+
+        // Track 2
+        String t2Text = "T2: Empty";
+        int t2Color = R.color.colorTextSecondary;
+        if (track2.fileUri != null || track2.originalSamples != null) {
+            t2Text = "T2: " + getStatusLabel(track2.currentAudioState);
+             t2Color = (currentTrackId == 2) ? R.color.colorAccent : R.color.colorTextPrimary;
+        }
+        tvTrack2Status.setText(t2Text);
+        tvTrack2Status.setTypeface(null, (currentTrackId == 2) ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+        tvTrack2Status.setTextColor(getResources().getColor(t2Color));
+    }
+    
+    private String getStatusLabel(AudioState state) {
+        switch (state) {
+            case ORIGINAL: return "Original";
+            case VOCAL: return "Vocal";
+            case INSTRUMENTAL: return "Instr.";
+            case MIX: return "Mix";
+            default: return "Custom";
+        }
+    }
+
+    private void updateTuneValueText() {
+        switch (currentTuneMode) {
+            case SPEED:
+                int speed = (int)(getCurrentTrackState().resample_percent * 100);
+                tvActiveValue.setText(speed + "%");
+                break;
+            case PITCH:
+                double pitch = getCurrentTrackState().pitch_up_percent;
+                if (pitch <= 0) pitch = 1.0;
+                double oct = Math.log(pitch) / Math.log(2);
+                tvActiveValue.setText(String.format("%.2f Octave", oct));
+                break;
+            case CROP:
+                int crop = (int)((1.0 - getCurrentTrackState().crop_percent) * 100);
+                 tvActiveValue.setText(crop + "%");
+                break;
+        }
+>>>>>>> Stashed changes
     }
 
     private android.os.Handler mHandler = new android.os.Handler();
