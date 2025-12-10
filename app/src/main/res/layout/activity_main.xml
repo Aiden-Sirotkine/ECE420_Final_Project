@@ -6,32 +6,19 @@
     android:layout_height="match_parent"
     android:background="@color/colorBackground"
     tools:context="com.ece420.lab4.MainActivity">
-
     <!-- Top Bar -->
-    <ImageView
-        android:id="@+id/btn_menu"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:src="@android:drawable/ic_menu_sort_by_size"
-        app:tint="@color/colorTextPrimary"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="RemixLab"
         android:textColor="@color/colorTextPrimary"
         android:textSize="20sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@id/btn_menu"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/btn_menu" />
-
+        app:layout_constraintTop_toTopOf="parent" />
     <TextView
         android:id="@+id/tv_import_label"
         android:layout_width="wrap_content"
@@ -43,29 +30,16 @@
         app:layout_constraintBottom_toBottomOf="@id/btn_download"
         app:layout_constraintEnd_toStartOf="@id/btn_download"
         app:layout_constraintTop_toTopOf="@id/btn_download" />
-
     <ImageView
         android:id="@+id/btn_download"
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
         android:src="@android:drawable/stat_sys_download"
         app:tint="@color/colorTextPrimary"
-        app:layout_constraintBottom_toBottomOf="@id/btn_menu"
-        app:layout_constraintEnd_toStartOf="@id/btn_more"
-        app:layout_constraintTop_toTopOf="@id/btn_menu" />
-
-    <ImageView
-        android:id="@+id/btn_more"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginEnd="16dp"
-        android:src="@android:drawable/ic_menu_more"
-        app:tint="@color/colorTextPrimary"
-        app:layout_constraintBottom_toBottomOf="@id/btn_menu"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/btn_menu" />
-
+        app:layout_constraintTop_toTopOf="parent" />
     <!-- Waveform Area (Placeholder) -->
     <!-- Spectrum Visualizer -->
     <!-- Spectrum Visualizer -->
@@ -80,9 +54,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_title" />
-
-
-
     <!-- Control Panel Container -->
     <LinearLayout
         android:id="@+id/control_panel_container"
@@ -93,7 +64,6 @@
         app:layout_constraintBottom_toTopOf="@+id/waveform_seekbar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
-
         <!-- Track Toggle -->
         <LinearLayout
             android:id="@+id/track_toggle_container"
@@ -103,7 +73,6 @@
             android:orientation="horizontal"
             android:padding="4dp"
             android:layout_marginBottom="16dp">
-
             <Button
                 android:id="@+id/btn_track_1"
                 android:layout_width="0dp"
@@ -113,7 +82,6 @@
                 android:text="Track 1"
                 android:textStyle="bold"
                 android:textColor="@color/colorTextPrimary" />
-
             <Button
                 android:id="@+id/btn_track_2"
                 android:layout_width="0dp"
@@ -123,7 +91,6 @@
                 android:text="Track 2"
                 android:textColor="@color/colorTextSecondary" />
         </LinearLayout>
-
         <!-- Tabs -->
         <LinearLayout
             android:id="@+id/tabs_container"
@@ -133,7 +100,6 @@
             android:orientation="horizontal"
             android:padding="4dp"
             android:weightSum="3">
-
             <TextView
                 android:id="@+id/tab_separation"
                 android:layout_width="0dp"
@@ -145,7 +111,6 @@
                 android:text="Separation"
                 android:textStyle="bold"
                 android:textColor="@color/colorTextPrimary" />
-
             <TextView
                 android:id="@+id/tab_tune"
                 android:layout_width="0dp"
@@ -155,7 +120,6 @@
                 android:padding="8dp"
                 android:text="Tune &amp; Tempo"
                 android:textColor="@color/colorTextSecondary" />
-
             <TextView
                 android:id="@+id/tab_mixing"
                 android:layout_width="0dp"
@@ -174,7 +138,6 @@
              android:orientation="vertical"
              android:padding="16dp"
              android:background="@drawable/bg_rounded_card">
-
             <!-- Content: Separation (Default) -->
             <FrameLayout
                 android:id="@+id/separation_controls_container"
@@ -242,7 +205,6 @@
                 android:orientation="vertical"
                 android:visibility="gone"
                 android:layout_marginTop="12dp">
-
                 <!-- Toggle Bar for Mode Selection -->
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -250,7 +212,6 @@
                     android:background="@drawable/bg_button_soft"
                     android:padding="4dp"
                     android:orientation="horizontal">
-
                     <TextView
                         android:id="@+id/btn_mode_speed"
                         android:layout_width="0dp"
@@ -262,7 +223,6 @@
                         android:background="@drawable/bg_tab_pill"
                         android:clickable="true"
                         android:focusable="true"/>
-
                     <TextView
                         android:id="@+id/btn_mode_pitch"
                         android:layout_width="0dp"
@@ -274,7 +234,6 @@
                         android:background="@drawable/bg_tab_pill"
                         android:clickable="true"
                         android:focusable="true"/>
-
                     <TextView
                         android:id="@+id/btn_mode_crop"
                         android:layout_width="0dp"
@@ -287,7 +246,6 @@
                         android:clickable="true"
                         android:focusable="true"/>
                 </LinearLayout>
-
                 <!-- Dynamic Control Area -->
                 <TextView
                     android:id="@+id/tv_active_value"
@@ -299,7 +257,6 @@
                     android:textSize="32sp"
                     android:textStyle="bold"
                     android:textColor="@color/colorTextPrimary" />
-
                 <TextView
                     android:id="@+id/tv_active_label"
                     android:layout_width="match_parent"
@@ -309,7 +266,6 @@
                     android:textSize="12sp"
                     android:textColor="@color/colorTextSecondary"
                     android:layout_marginBottom="16dp"/>
-
                 <SeekBar
                     android:id="@+id/active_slider"
                     android:layout_width="match_parent"
@@ -318,7 +274,6 @@
                     android:progress="500"
                     android:progressTint="@color/colorAccent"
                     android:thumbTint="@color/colorAccent" />
-
                 <!-- Action Button -->
                 <Button
                     android:id="@+id/btn_apply_effect"
@@ -329,7 +284,6 @@
                     android:text="APPLY RE-SAMPLE"
                     android:textColor="@color/colorTextPrimary"
                     android:textStyle="bold"/>
-
             </LinearLayout>
     
             <LinearLayout
@@ -358,7 +312,6 @@
             </LinearLayout>
             
         </LinearLayout>
-
     </LinearLayout>
     
     <!-- Status View (Anchored to Top of Controls) -->
@@ -374,7 +327,6 @@
         app:layout_constraintBottom_toTopOf="@id/control_panel_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
-
     <!-- Mix Status Indicator (Anchored to Top of Status) -->
     <LinearLayout
         android:id="@+id/mix_status_container"
@@ -387,7 +339,6 @@
         app:layout_constraintBottom_toTopOf="@id/statusView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-
         <TextView
             android:id="@+id/tv_track1_status"
             android:layout_width="0dp"
@@ -401,13 +352,11 @@
             android:textColor="@color/colorTextSecondary"
             android:textSize="12sp"
             android:layout_marginEnd="8dp"/>
-
         <ImageView
             android:layout_width="16dp"
             android:layout_height="16dp"
             android:src="@android:drawable/ic_input_add"
             app:tint="@color/colorTextSecondary" />
-
         <TextView
             android:id="@+id/tv_track2_status"
             android:layout_width="0dp"
@@ -422,7 +371,6 @@
             android:textSize="12sp"
             android:layout_marginStart="8dp"/>
     </LinearLayout>
-
     <!-- Waveform Playbar (Anchored to Bottom Components) -->
     <com.ece420.lab4.SpectrumVisualizerView
         android:id="@+id/waveform_seekbar"
@@ -431,7 +379,6 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="4dp"
         app:layout_constraintBottom_toTopOf="@id/progress_container" />
-
     <!-- Time Labels -->
     <LinearLayout
         android:id="@+id/progress_container"
@@ -442,7 +389,6 @@
         android:paddingHorizontal="16dp"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@id/playback_controls">
-
         <TextView
             android:id="@+id/tv_current_time"
             android:layout_width="wrap_content"
@@ -451,12 +397,10 @@
             android:textColor="@color/colorTextSecondary"
             android:textSize="12sp"
             android:fontFamily="monospace" />
-
         <View
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_weight="1" />
-
         <TextView
             android:id="@+id/tv_total_time"
             android:layout_width="wrap_content"
@@ -466,7 +410,6 @@
             android:textSize="12sp"
             android:fontFamily="monospace" />
     </LinearLayout>
-
     <!-- Playback Controls -->
     <LinearLayout
         android:id="@+id/playback_controls"
@@ -476,20 +419,17 @@
         android:orientation="horizontal"
         android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toBottomOf="parent">
-
         <ImageView
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@android:drawable/ic_media_previous"
             app:tint="@color/colorTextPrimary" />
-
         <ImageView
             android:id="@+id/btn_play_pause"
             android:layout_width="64dp"
             android:layout_height="64dp"
             android:layout_marginHorizontal="32dp"
             android:src="@drawable/ic_play_circle" />
-
         <ImageView
             android:layout_width="32dp"
             android:layout_height="32dp"
@@ -524,5 +464,4 @@
         android:onClick="loadFileClick"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="parent"/>
-
     </androidx.constraintlayout.widget.ConstraintLayout>
