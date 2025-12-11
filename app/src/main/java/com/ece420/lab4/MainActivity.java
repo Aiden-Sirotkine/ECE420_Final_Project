@@ -481,7 +481,7 @@ public class MainActivity extends AppCompatActivity {
                     new Visualizer.OnDataCaptureListener() {
                         public void onWaveFormDataCapture(Visualizer visualizer,
                                                           byte[] bytes, int samplingRate) {
-                            // We use FFT for spectrum, but could use this for waveform mode if we wanted real-time wave
+
                         }
 
                         public void onFftDataCapture(Visualizer visualizer,
@@ -506,22 +506,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void seekToProgress(float progress) {
-        // Calculate time in milliseconds
-        // If playing original (MediaPlayer)
-        // If playing original (MediaPlayer) - ONLY if we don't have samples loaded for AudioTrack
+
         if (getCurrentTrackState().currentAudioState == AudioState.ORIGINAL && mediaPlayer != null && getCurrentTrackState().originalSamples == null) {
             int duration = mediaPlayer.getDuration();
             int seekTo = (int) (duration * progress);
             mediaPlayer.seekTo(seekTo);
         }
-        // If playing processed audio (AudioTrack), we can't easily seek with static mode unless we reload.
-        // Static AudioTrack allows setPlaybackHeadPosition? Yes.
+
         else if (currentAudioTrack != null) {
-            // AudioTrack in static mode
-            // getBufferSizeInFrames() or something?
-            // We passed samples.length * 2 as buffer size.
-            // We need to know total frames.
-            // If we have the samples array, we know length.
 
             int totalFrames = 0;
             if (getCurrentTrackState().currentAudioState == AudioState.ORIGINAL && getCurrentTrackState().originalSamples != null)
@@ -978,11 +970,6 @@ public class MainActivity extends AppCompatActivity {
         }
         
         // Update Sliders based on track state
-        // Logic: percent (0-1) -> progress (0-1000)
-        // Crop: 
-        // Logic in listener: percent = (double)progress/10.0 => 0-100. Then /100 => 0-1. Then 1-percent.
-        // Reverse: real_percent = 1 - ts.crop_percent. stored_percent = real_percent. progress = stored_percent * 100 * 10.
-        // Simplification: just reset sliders to center or match default? 
         updateTuneUI();
         updateToggleUI();
         updateMediaPlayer();
@@ -1148,7 +1135,6 @@ public class MainActivity extends AppCompatActivity {
 
         statusView.setText("Processing Speed resampling...");
         try {
-            // ... (Processing logic remains same) ...
             // 1. Load WAV file from user-selected file or fallback to raw resources
 
 
@@ -1191,11 +1177,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Need to update WSOLAClick (Pitch), cropClick, mixClick similarly
-    // Since I can't see WSOLAClick in the previous view, I will assume it's there or I need to find it.
-    // Wait, I saw WSOLAClick in the file content earlier? 
-    // Ah, I missed viewing the WSOLAClick implementation. I should find it.
-
     public void cropClick(View view) {
         // Check if Crop result is already cached
 //        if (croppedSamples != null) {
@@ -1226,17 +1207,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
             // Store Crop result in cache
-//            croppedSamples = resampledSamples;
-//            croppedSampleRate = sampleRate; // Was sampleRate * 2 in original code? Let's check.
-            // Original code had: croppedSampleRate = sampleRate * 2; and sampleRate *= 2; 
-            // But logic was just array copy. Why *2? Maybe mono/stereo confusion or just wrong?
-            // I'll stick to sampleRate for now unless I see reason otherwise.
-            // Wait, original code: sampleRate *= 2; // or parse from WAV header
-            // AudioTrack audioTrack = new AudioTrack(..., sampleRate, ...);
-            // If I change it, I might break it. Let's keep it consistent if I can.
-            // Actually, let's just set the state.
-
-//            croppedSampleRate = sampleRate * 2; // Correcting potential bug or just safe default
 
             if (getCurrentTrackState().currentAudioState == AudioState.ORIGINAL) {
                 getCurrentTrackState().originalSamples = resampledSamples;
